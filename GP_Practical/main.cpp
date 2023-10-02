@@ -168,22 +168,22 @@ void handleKeyDownEvent(WPARAM key)
 		debugTrans.rotY = 1;
 		debugTrans.rotX = debugTrans.rotZ = 0;
 		return;
-	case VK_LEFT:
-		debugTrans.rotAngle += 1;
-		debugTrans.rotY = 1;
-		return;
-	case VK_RIGHT:
-		debugTrans.rotAngle -= 1;
-		debugTrans.rotY = 1;
-		return;
-	case VK_UP:
-		debugTrans.rotAngle -= 1;
-		debugTrans.rotX = 1;
-		return;
-	case VK_DOWN:
-		debugTrans.rotAngle += 1;
-		debugTrans.rotX = 1;
-		return;
+	//case VK_LEFT:
+	//	debugTrans.rotAngle += 1;
+	//	debugTrans.rotY = 1;
+	//	return;
+	//case VK_RIGHT:
+	//	debugTrans.rotAngle -= 1;
+	//	debugTrans.rotY = 1;
+	//	return;
+	//case VK_UP:
+	//	debugTrans.rotAngle -= 1;
+	//	debugTrans.rotX = 1;
+	//	return;
+	//case VK_DOWN:
+	//	debugTrans.rotAngle += 1;
+	//	debugTrans.rotX = 1;
+	//	return;
 	}
 
 	Robot::handleKeyDownEvent(key);

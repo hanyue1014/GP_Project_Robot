@@ -13,7 +13,7 @@ namespace Robot
 	{
 	private:
 		float newX, newY, newZ; // marks the newX and newY of the top side's sphere
-		float rootAngle = 90, rootYRotation = 0;
+		float rootAngle = 0, rootYRotation = 0;
 		float jointAngle = 180, jointYRotation = 0;
 		const float upperArmLength = 5, botArmLength = 5;
 	public:
@@ -27,19 +27,19 @@ namespace Robot
 			cv
 				.pushMatrix()
 				.rotate(rootYRotation, 0, 1, 0)
-				.rotate(rootAngle, -1, 0, 0)
+				.rotate(rootAngle, 1, 0, 0)
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1) // root bola
-				.cuboid({ -1, 1, -1, {255, 255, 0} }, { 1, -1, -(0 + upperArmLength) }) // 0 cuz wanna factor in the bola
+				.cuboid({ -1, 1, 1, {255, 255, 0} }, { 1, -1, (0 + upperArmLength) }) // 0 cuz wanna factor in the bola
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				;
 
 			cv
 				.pushMatrix()
-				.translate(0, 0, -6)
+				.translate(0, 0, 6)
 				.rotate(jointYRotation, 0, 1, 0)
-				.rotate(jointAngle, -1, 0, 0) // elbow bola
+				.rotate(jointAngle, 1, 0, 0) // elbow bola
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
-				.cuboid({ -1, 1, 1, {255, 255, 0} }, { 1, -1, 0 + botArmLength }) // 0 cuz wanna factor in the bola as well
+				.cuboid({ -1, 1, -1, {255, 255, 0} }, { 1, -1, -(0 + botArmLength) }) // 0 cuz wanna factor in the bola as well
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				.popMatrix()
 				;
@@ -58,7 +58,7 @@ namespace Robot
 				z = target.z - newZ;
 
 			Point3D v1 = { x, y, z }; // the root -> target vector
-			Point3D v2 = { 0, 0, -1 };  // the ori vector which z shouldn't actually matter
+			Point3D v2 = { 0, 0, 1 };  // the ori vector which z shouldn't actually matter
 
 			float magV1 = magnitude(v1);
 			float magV2 = magnitude(v2);
@@ -236,17 +236,36 @@ namespace Robot
 	};
 	Point3D rightLegCurrentTarget = rightLegRestTarget;
 	// due to array arrangement only need one to keep track both
-	int bothLegWalkingIndex = 0;
+	int walkingAnimationIndex = 0;
 
 	float leftHandRootRestYRotation = 0;
 	float leftHandJointRestYRotation = 0;
 	float leftHandRootYRotation = leftHandRootRestYRotation;
 	float leftHandJointYRotation = leftHandJointRestYRotation;
 
-	Point3D leftHandRestTarget = { -5, -3, 0 };
+	Point3D leftHandRestTarget = { -5, -1.5, 1 };
 	// TODO: add handTargets and when walking
 	Point3D leftHandWalkTargets[] = {
-		{ -5, -3, 0 },
+		{ -5, -1.5, 0 },
+		{ -5, -0.5, -1},
+		{ -5, -0.5, -2 },
+		{ -5, 0.5, -3 },
+		{ -5, 1.5, -4 }, // max back point
+		{ -5, 0.5, -3 },
+		{ -5, -0.5, -2 },
+		{ -5, -0.5, -1 },
+		{ -5, -1.5, 0 },
+		{ -5, -1.5, 1 },
+		{ -5, -1.5, 2 },
+		{ -5, -0.5, 3 },
+		{ -5, -0.5, 4 },
+		{ -5, 0.5, 5 },
+		{ -5, 1.5, 6 }, // max point
+		{ -5, 0.5, 5 },
+		{ -5, -0.5, 4 },
+		{ -5, -0.5, 3 },
+		{ -5, -1.5, 2 },
+		{ -5, -1.5, 1 }, // swing forward and back to rest position
 	};
 	Point3D leftHandCurrentTarget = leftHandRestTarget;
 
@@ -254,19 +273,37 @@ namespace Robot
 	float rightHandJointRestYRotation = 0;
 	float rightHandRootYRotation = rightHandRootRestYRotation;
 	float rightHandJointYRotation = rightHandJointRestYRotation;
+	Point3D handTargetDebug = { 5, -1.5, 1, {200, 255, 255} };
 
-	Point3D rightHandRestTarget = { 5, -3, 0 };
-	// TODO: add handTargets and when walking
+	Point3D rightHandRestTarget = { 5, -1.5, 1 };
 	Point3D rightHandWalkTargets[] = {
-		{ 5, -3, 0 },
+		{ 5, -1.5, 2 },
+		{ 5, -0.5, 3 },
+		{ 5, -0.5, 4 },
+		{ 5, 0.5, 5 },
+		{ 5, 1.5, 6 }, // max point
+		{ 5, 0.5, 5 },
+		{ 5, -0.5, 4 },
+		{ 5, -0.5, 3 },
+		{ 5, -1.5, 2 },
+		{ 5, -1.5, 1 }, // swing forward and back to rest position
+		{ 5, -1.5, 0 },
+		{ 5, -0.5, -1},
+		{ 5, -0.5, -2 },
+		{ 5, 0.5, -3 },
+		{ 5, 1.5, -4 }, // max back point
+		{ 5, 0.5, -3 },
+		{ 5, -0.5, -2 },
+		{ 5, -0.5, -1 },
+		{ 5, -1.5, 0 },
+		{ 5, -1.5, 1 },
 	};
 	Point3D rightHandCurrentTarget = rightHandRestTarget;
-	// due to array arrangement only need one to keep track both
-	int bothHandWalkingIndex = 0;
 
 	bool isWalking = false;
 	float walkingTweenProgress = 0;
 	float stopWalkingTweenProgress = 0;
+	float bodyCurrentWalkRotation = 0, maxBodyWalkRotation = 10, lastRotationBeforeStopWalking = 0;
 
 	void main()
 	{
@@ -274,50 +311,77 @@ namespace Robot
 		{
 
 			// walking leg animation
-			leftLegCurrentTarget = tween(leftLegCurrentTarget, leftLegWalkTargets[bothLegWalkingIndex], walkingTweenProgress += 0.05);
-			//leftLegCurrentTarget = {
-			//	tween(leftLegCurrentTarget.x, leftLegWalkTargets[bothLegWalkingIndex].x, walkingTweenProgress += 0.08),
-			//	tween(leftLegCurrentTarget.y, leftLegWalkTargets[bothLegWalkingIndex].y, walkingTweenProgress),
-			//	tween(leftLegCurrentTarget.z, leftLegWalkTargets[bothLegWalkingIndex].z, walkingTweenProgress),
-			//};
-			rightLegCurrentTarget = tween(rightLegCurrentTarget, rightLegWalkTargets[bothLegWalkingIndex], walkingTweenProgress);
-			//rightLegCurrentTarget = {
-			//	tween(rightLegCurrentTarget.x, rightLegWalkTargets[bothLegWalkingIndex].x, walkingTweenProgress),
-			//	tween(rightLegCurrentTarget.y, rightLegWalkTargets[bothLegWalkingIndex].y, walkingTweenProgress),
-			//	tween(rightLegCurrentTarget.z, rightLegWalkTargets[bothLegWalkingIndex].z, walkingTweenProgress),
-			//};
+			leftLegCurrentTarget = tween(leftLegWalkTargets[walkingAnimationIndex], leftLegWalkTargets[walkingAnimationIndex + 1], walkingTweenProgress += 0.05);
+			rightLegCurrentTarget = tween(rightLegWalkTargets[walkingAnimationIndex], rightLegWalkTargets[walkingAnimationIndex + 1], walkingTweenProgress);
+
+			// walking hand animation
+			rightHandCurrentTarget = tween(rightHandWalkTargets[walkingAnimationIndex], rightHandWalkTargets[walkingAnimationIndex + 1], walkingTweenProgress);
+			leftHandCurrentTarget = tween(leftHandWalkTargets[walkingAnimationIndex], leftHandWalkTargets[walkingAnimationIndex + 1], walkingTweenProgress);
+
+			int walkAnimCount = sizeof(leftLegWalkTargets) / sizeof(leftLegWalkTargets[0]);
+
+			// first half of the 
+			// at index == 10 and 20 eh time rotation should be 0
+			// at 10 eh time percent = 0.5
+			// at 20 eh time percent = 1
+			// if split
+			if (walkingAnimationIndex <= 4)
+			{
+				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(0, maxBodyWalkRotation, walkingAnimationIndex / 4.0);
+			}
+			else if (walkingAnimationIndex > 4 && walkingAnimationIndex <= 9)
+			{
+				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(maxBodyWalkRotation, 0, (walkingAnimationIndex - 4) / 5.0);
+			}
+			else if (walkingAnimationIndex > 9 && walkingAnimationIndex <= 14)
+			{
+				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(0, -maxBodyWalkRotation, (walkingAnimationIndex - 9) / 5.0);
+			}
+			else 
+			{
+				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(-maxBodyWalkRotation, 0, (walkingAnimationIndex - 14) / 5.0);
+			}
+
 			if (walkingTweenProgress >= 1)
 			{
 				walkingTweenProgress = 0;
-				if (++bothLegWalkingIndex >= sizeof(leftLegWalkTargets) / sizeof(leftLegWalkTargets[0]))
-					bothLegWalkingIndex = 0;
+				if (++walkingAnimationIndex >= walkAnimCount)
+					walkingAnimationIndex = 0;
 			}
 		}
 		// if stopped walking but still not in leg resting position, tween it back
-		if (!isWalking && (leftLegCurrentTarget != leftLegRestTarget || rightLegCurrentTarget != rightLegRestTarget))
+		if (!isWalking 
+			&& (leftLegCurrentTarget != leftLegRestTarget || rightLegCurrentTarget != rightLegRestTarget)
+			&& (leftHandCurrentTarget != leftHandRestTarget || rightHandCurrentTarget != rightHandRestTarget)
+			)
 		{
 			// tween back
-			leftLegCurrentTarget = {
-				tween(leftLegCurrentTarget.x, leftLegRestTarget.x, stopWalkingTweenProgress += 0.0005),
-				tween(leftLegCurrentTarget.y, leftLegRestTarget.y, stopWalkingTweenProgress),
-				tween(leftLegCurrentTarget.z, leftLegRestTarget.z, stopWalkingTweenProgress),
-			};
-			rightLegCurrentTarget = {
-				tween(rightLegCurrentTarget.x, rightLegRestTarget.x, stopWalkingTweenProgress),
-				tween(rightLegCurrentTarget.y, rightLegRestTarget.y, stopWalkingTweenProgress),
-				tween(rightLegCurrentTarget.z, rightLegRestTarget.z, stopWalkingTweenProgress),
-			};
+			leftLegCurrentTarget = tween(leftLegWalkTargets[walkingAnimationIndex], leftLegRestTarget, stopWalkingTweenProgress += 0.005);
+			rightLegCurrentTarget = tween(rightLegWalkTargets[walkingAnimationIndex], rightLegRestTarget, stopWalkingTweenProgress);
+
+			// tween back hand
+			rightHandCurrentTarget = tween(rightHandWalkTargets[walkingAnimationIndex], rightHandRestTarget, stopWalkingTweenProgress);
+			leftHandCurrentTarget = tween(leftHandWalkTargets[walkingAnimationIndex], leftHandRestTarget, stopWalkingTweenProgress);
+
+			bodyCurrentWalkRotation = tween(lastRotationBeforeStopWalking, 0, stopWalkingTweenProgress);
 
 			if (stopWalkingTweenProgress >= 1)
 			{
+				walkingAnimationIndex = 0;
 				walkingTweenProgress = 0;
 				stopWalkingTweenProgress = 0;
 				// for some reason cpp eh 1 can become 1.00000001 eh at that time my tween function wont exactly tween it to the same numbers, so set it back manually to escape this condition
 				leftLegCurrentTarget = leftLegRestTarget;
 				rightLegCurrentTarget = rightLegRestTarget;
+				leftHandCurrentTarget = leftHandRestTarget;
+				rightHandCurrentTarget = rightHandRestTarget;
 			}
 		}
 
+		cv
+			.pushMatrix() // upper body rotate when walking
+			.rotate(bodyCurrentWalkRotation, 0, 1, 0)
+			;
 		// upper body
 		cv
 			.cube({ 0, 1.5, 0, {255, 255, 0} }, 0.5)
@@ -376,6 +440,8 @@ namespace Robot
 
 		Hand rightHand({ 5, 8, 0 });
 		rightHand.solveIK(rightHandCurrentTarget);
+		//cv.pointSize(20).point(handTargetDebug).pointSize(1);
+		//rightHand.solveIK(handTargetDebug);
 		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation);
 		rightHand.draw();
 
@@ -384,7 +450,9 @@ namespace Robot
 		leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation);
 		leftHand.draw();
 
-		// body
+		cv.popMatrix();
+
+		// lower body
 		cv
 			.cuboid({ -1, -1, 1, {0, 0, 255} }, { 1, -3, -1 })
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
@@ -418,6 +486,18 @@ namespace Robot
 		{
 		case 'W': 
 			isWalking = true;
+			break;
+		case VK_UP:
+			handTargetDebug.y += 0.5;
+			break;
+		case VK_DOWN:
+			handTargetDebug.y -= 0.5;
+			break;
+		case VK_LEFT:
+			handTargetDebug.z += 0.5;
+			break;
+		case VK_RIGHT:
+			handTargetDebug.z -= 0.5;
 			break;
 		}
 	}
