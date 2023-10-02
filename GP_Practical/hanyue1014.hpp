@@ -17,7 +17,7 @@ namespace Robot
 			// left half
 			.pushMatrix()
 			.rotate(90, 0, 0, 1)
-			.cuboid({ -0.3, 1.5, 0.2, primary }, { 0.7, 1.5, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
+			.cuboid({ -0.3, 1.25, 0.2, primary }, { 0.7, 1.25, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
@@ -36,7 +36,7 @@ namespace Robot
 			.pushMatrix()
 			.rotate(180, 0, 1, 0)
 			.rotate(90, 0, 0, 1)
-			.cuboid({ -0.3, 1.5, 0.2, primary }, { 0.7, 1.5, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
+			.cuboid({ -0.3, 1.25, 0.2, primary }, { 0.7, 1.25, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
@@ -52,7 +52,10 @@ namespace Robot
 			.popMatrix()
 			.popMatrix()
 			// chin
-			.pyramid({ -0.75, -1, 0.6, primary }, { 0.75, -1, -0.6 }, { 0, -1.35, 0.25 })
+			.pyramid({ -0.75, -1, 0.6, primary }, { 0.75, -1, -0.6 }, { 0, -1.4, 0.25 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			// tianlinggai
+			.pyramid({ -0.75, 1, 0.6, primary }, { 0.75, 1, -0.6 }, { 0, 1.2, 0 })
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			;
 	}
