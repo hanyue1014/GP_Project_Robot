@@ -189,6 +189,11 @@ void handleKeyDownEvent(WPARAM key)
 	Robot::handleKeyDownEvent(key);
 }
 
+void handleKeyUpEvent(WPARAM key)
+{
+	Robot::handleKeyUpEvent(key);
+}
+
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -200,6 +205,10 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE) PostQuitMessage(0);
 		handleKeyDownEvent(wParam);
+		break;
+
+	case WM_KEYUP:
+		handleKeyUpEvent(wParam);
 		break;
 
 	default:

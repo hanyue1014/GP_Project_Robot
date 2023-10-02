@@ -4,6 +4,7 @@
 
 float tween(float from, float to, float percent);
 Color tween(Color from, Color to, float percent);
+Point3D tween(Point3D from, Point3D to, float percent);
 
 // assuming v1 is the vector to the point from origin
 float magnitude(Point3D v1);

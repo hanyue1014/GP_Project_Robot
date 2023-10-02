@@ -13,8 +13,8 @@ namespace Robot
 	{
 	private:
 		float newX, newY, newZ; // marks the newX and newY of the top side's sphere
-		float rootAngle = 90;
-		float jointAngle = 180;
+		float rootAngle = 90, rootYRotation = 0;
+		float jointAngle = 180, jointYRotation = 0;
 		const float upperArmLength = 5, botArmLength = 5;
 	public:
 		// creates the hand at the position
@@ -26,6 +26,7 @@ namespace Robot
 
 			cv
 				.pushMatrix()
+				.rotate(rootYRotation, 0, 1, 0)
 				.rotate(rootAngle, -1, 0, 0)
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1) // root bola
 				.cuboid({ -1, 1, -1, {255, 255, 0} }, { 1, -1, -(0 + upperArmLength) }) // 0 cuz wanna factor in the bola
@@ -35,6 +36,7 @@ namespace Robot
 			cv
 				.pushMatrix()
 				.translate(0, 0, -6)
+				.rotate(jointYRotation, 0, 1, 0)
 				.rotate(jointAngle, -1, 0, 0) // elbow bola
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
 				.cuboid({ -1, 1, 1, {255, 255, 0} }, { 1, -1, 0 + botArmLength }) // 0 cuz wanna factor in the bola as well
@@ -96,6 +98,12 @@ namespace Robot
 				theta = 0;
 			}
 			jointAngle = theta * 2;
+		}
+
+		void forceYRotation(float rootYRot, float jointYRot)
+		{
+			rootYRotation = rootYRot;
+			jointYRotation = jointYRot;
 		}
 	};
 
@@ -178,7 +186,6 @@ namespace Robot
 
 	// leftLeg would go upwards first
 	Point3D leftLegRestTarget = { -2, -13, 0 };
-	// TODO: tween these when walking
 	Point3D leftLegWalkTargets[] = {
 		{ -2, -9, 0 }, // go upwards 
 		{ -2, -9, 1 }, // make a parabola when walking towards front
@@ -231,8 +238,86 @@ namespace Robot
 	// due to array arrangement only need one to keep track both
 	int bothLegWalkingIndex = 0;
 
+	float leftHandRootRestYRotation = 0;
+	float leftHandJointRestYRotation = 0;
+	float leftHandRootYRotation = leftHandRootRestYRotation;
+	float leftHandJointYRotation = leftHandJointRestYRotation;
+
+	Point3D leftHandRestTarget = { -5, -3, 0 };
+	// TODO: add handTargets and when walking
+	Point3D leftHandWalkTargets[] = {
+		{ -5, -3, 0 },
+	};
+	Point3D leftHandCurrentTarget = leftHandRestTarget;
+
+	float rightHandRootRestYRotation = 0;
+	float rightHandJointRestYRotation = 0;
+	float rightHandRootYRotation = rightHandRootRestYRotation;
+	float rightHandJointYRotation = rightHandJointRestYRotation;
+
+	Point3D rightHandRestTarget = { 5, -3, 0 };
+	// TODO: add handTargets and when walking
+	Point3D rightHandWalkTargets[] = {
+		{ 5, -3, 0 },
+	};
+	Point3D rightHandCurrentTarget = rightHandRestTarget;
+	// due to array arrangement only need one to keep track both
+	int bothHandWalkingIndex = 0;
+
+	bool isWalking = false;
+	float walkingTweenProgress = 0;
+	float stopWalkingTweenProgress = 0;
+
 	void main()
 	{
+		if (isWalking)
+		{
+
+			// walking leg animation
+			leftLegCurrentTarget = tween(leftLegCurrentTarget, leftLegWalkTargets[bothLegWalkingIndex], walkingTweenProgress += 0.05);
+			//leftLegCurrentTarget = {
+			//	tween(leftLegCurrentTarget.x, leftLegWalkTargets[bothLegWalkingIndex].x, walkingTweenProgress += 0.08),
+			//	tween(leftLegCurrentTarget.y, leftLegWalkTargets[bothLegWalkingIndex].y, walkingTweenProgress),
+			//	tween(leftLegCurrentTarget.z, leftLegWalkTargets[bothLegWalkingIndex].z, walkingTweenProgress),
+			//};
+			rightLegCurrentTarget = tween(rightLegCurrentTarget, rightLegWalkTargets[bothLegWalkingIndex], walkingTweenProgress);
+			//rightLegCurrentTarget = {
+			//	tween(rightLegCurrentTarget.x, rightLegWalkTargets[bothLegWalkingIndex].x, walkingTweenProgress),
+			//	tween(rightLegCurrentTarget.y, rightLegWalkTargets[bothLegWalkingIndex].y, walkingTweenProgress),
+			//	tween(rightLegCurrentTarget.z, rightLegWalkTargets[bothLegWalkingIndex].z, walkingTweenProgress),
+			//};
+			if (walkingTweenProgress >= 1)
+			{
+				walkingTweenProgress = 0;
+				if (++bothLegWalkingIndex >= sizeof(leftLegWalkTargets) / sizeof(leftLegWalkTargets[0]))
+					bothLegWalkingIndex = 0;
+			}
+		}
+		// if stopped walking but still not in leg resting position, tween it back
+		if (!isWalking && (leftLegCurrentTarget != leftLegRestTarget || rightLegCurrentTarget != rightLegRestTarget))
+		{
+			// tween back
+			leftLegCurrentTarget = {
+				tween(leftLegCurrentTarget.x, leftLegRestTarget.x, stopWalkingTweenProgress += 0.0005),
+				tween(leftLegCurrentTarget.y, leftLegRestTarget.y, stopWalkingTweenProgress),
+				tween(leftLegCurrentTarget.z, leftLegRestTarget.z, stopWalkingTweenProgress),
+			};
+			rightLegCurrentTarget = {
+				tween(rightLegCurrentTarget.x, rightLegRestTarget.x, stopWalkingTweenProgress),
+				tween(rightLegCurrentTarget.y, rightLegRestTarget.y, stopWalkingTweenProgress),
+				tween(rightLegCurrentTarget.z, rightLegRestTarget.z, stopWalkingTweenProgress),
+			};
+
+			if (stopWalkingTweenProgress >= 1)
+			{
+				walkingTweenProgress = 0;
+				stopWalkingTweenProgress = 0;
+				// for some reason cpp eh 1 can become 1.00000001 eh at that time my tween function wont exactly tween it to the same numbers, so set it back manually to escape this condition
+				leftLegCurrentTarget = leftLegRestTarget;
+				rightLegCurrentTarget = rightLegRestTarget;
+			}
+		}
+
 		// upper body
 		cv
 			.cube({ 0, 1.5, 0, {255, 255, 0} }, 0.5)
@@ -290,9 +375,13 @@ namespace Robot
 			;
 
 		Hand rightHand({ 5, 8, 0 });
+		rightHand.solveIK(rightHandCurrentTarget);
+		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation);
 		rightHand.draw();
 
 		Hand leftHand({ -5, 8, 0 });
+		leftHand.solveIK(leftHandCurrentTarget);
+		leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation);
 		leftHand.draw();
 
 		// body
@@ -327,12 +416,20 @@ namespace Robot
 	{
 		switch (key)
 		{
-		case 'W': // start walking, should move into main
-			int walkIndex = bothLegWalkingIndex++;
-			if (bothLegWalkingIndex >= sizeof(leftLegWalkTargets) / sizeof(leftLegWalkTargets[0]))
-				bothLegWalkingIndex = 0;
-			leftLegCurrentTarget = leftLegWalkTargets[walkIndex];
-			rightLegCurrentTarget = rightLegWalkTargets[walkIndex];
+		case 'W': 
+			isWalking = true;
+			break;
+		}
+	}
+
+	void handleKeyUpEvent(WPARAM key)
+	{
+		switch (key)
+		{
+		case 'W':
+			isWalking = false;
+			break;
+		default:
 			break;
 		}
 	}

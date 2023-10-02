@@ -23,7 +23,14 @@ struct Color
 };
 
 struct Point2D { float x, y; Color c; };
-struct Point3D { float x, y, z; Color c; };
+struct Point3D { 
+    float x, y, z; Color c;
+    Point3D(float x, float y, float z) : x(x), y(y), z(z), c(Color()) {}
+    Point3D(float x, float y, float z, Color c) : x(x), y(y), z(z), c(c) {}
+    // only care bout the position, color diff still count as same point
+    bool operator==(const Point3D& o) { return x == o.x && y == o.y && z == o.z; }
+    bool operator!=(const Point3D& o) { return x != o.x || y != o.y || z != o.z; }
+};
 
 enum ProjectionMode { ORTHO, PERSPECTIVE };
 

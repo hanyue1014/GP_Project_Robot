@@ -16,6 +16,15 @@ Color tween(Color from, Color to, float percent)
 	);
 }
 
+Point3D tween(Point3D from, Point3D to, float percent)
+{
+	return Point3D(
+		tween(from.x, to.x, percent),
+		tween(from.y, to.y, percent),
+		tween(from.z, to.z, percent)
+	);
+}
+
 float magnitude(Point3D v1)
 {
 	return sqrtf(powf(v1.x, 2) + powf(v1.y, 2) + powf(v1.z, 2));
