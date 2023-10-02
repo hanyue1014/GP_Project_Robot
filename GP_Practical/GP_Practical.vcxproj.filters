@@ -38,5 +38,8 @@
     <ClInclude Include="hanyue1014.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="yikit.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
