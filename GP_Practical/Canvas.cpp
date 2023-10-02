@@ -689,6 +689,53 @@ Canvas& Canvas::pyramid(Point3D centerBase, float height, float lenFromCenter)
     return *this;
 }
 
+Canvas& Canvas::pyramid(Point3D centerBaseLeftFront, Point3D centerBaseRightBack, Point3D mid)
+{
+    float
+        left = centerBaseLeftFront.x,
+        right = centerBaseRightBack.x,
+        front = centerBaseLeftFront.z,
+        back = centerBaseRightBack.z,
+        base = centerBaseLeftFront.y;
+
+    begin(GL_QUADS);
+    polyPlot3D({
+        // base
+        { left, base, front, centerBaseLeftFront.c}, // front left
+        { right, base, front }, // front right
+        { right, base, back }, // back right
+        { left, base, back }, // back left
+        });
+	end();
+
+    begin(GL_TRIANGLES, false); // but don't stop tracking those i plotted
+
+    polyPlot3D({
+        // left pane
+        { left, base, back },
+        { left, base, front },
+        mid,
+
+        // back pane
+        { left, base, back },
+        { right, base, back },
+        mid,
+
+        // right pane
+        { right, base, back },
+        { right, base, front },
+        mid,
+
+        // front pane
+        { left, base, front },
+        { right, base, front},
+        mid,
+        });
+    end();
+
+    return *this;
+}
+
 Canvas& Canvas::replotPrevBlocky3D(GLenum type, Color c)
 {
     // cannot use the begin() method or it will clear the thing

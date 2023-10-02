@@ -8,6 +8,54 @@ namespace Robot
 {
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
+	Color primary = { 218, 219, 214 };
+	Color lineC = { 39, 37, 35 };
+
+	void Head()
+	{
+		cv
+			// left half
+			.pushMatrix()
+			.rotate(90, 0, 0, 1)
+			.cuboid({ -0.3, 1.5, 0.2, primary }, { 0.7, 1.5, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			// "eyes"
+			.pushMatrix()
+			.translate(0, 0, 0.601)
+			.pushMatrix() // top one
+			.rotate(30, 0, 0, -1)
+			.rect({ -0.1, 0.65, lineC }, { 0.1, 0.25 })
+			.popMatrix() // top one
+			.rotate(30, 0, 0, 1)
+			.rect({ -0.1, 0.65, lineC }, { 0.1, 0.25 })
+			.popMatrix()
+			.popMatrix()
+			// right half
+			.pushMatrix()
+			.rotate(180, 0, 1, 0)
+			.rotate(90, 0, 0, 1)
+			.cuboid({ -0.3, 1.5, 0.2, primary }, { 0.7, 1.5, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			// "eyes"
+			.pushMatrix()
+			.translate(0, 0, -0.601)
+			.pushMatrix() // top one
+			.rotate(30, 0, 0, -1)
+			.rect({ -0.1, 0.65, lineC }, { 0.1, 0.25 })
+			.popMatrix() // top one
+			.rotate(30, 0, 0, 1)
+			.rect({ -0.1, 0.65, lineC }, { 0.1, 0.25 })
+			.popMatrix()
+			.popMatrix()
+			// chin
+			.pyramid({ -0.75, -1, 0.6, primary }, { 0.75, -1, -0.6 }, { 0, -1.35, 0.25 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			;
+	}
 
 	class Hand
 	{
@@ -377,6 +425,10 @@ namespace Robot
 				rightHandCurrentTarget = rightHandRestTarget;
 			}
 		}
+
+		cv.pushMatrix().translate(0, 10, 0);
+		Head();
+		cv.popMatrix();
 
 		cv
 			.pushMatrix() // upper body rotate when walking

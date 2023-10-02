@@ -118,6 +118,7 @@ public:
     Canvas& cuboid(Point3D topLeftFront, Point3D bottomRightBack);
     Canvas& cuboid(Point3D topLeftFront, Point3D topRightBack, Point3D bottomLeftFront, Point3D bottomRightBack);
     Canvas& pyramid(Point3D centerBase, float height, float lenFromCenter);
+    Canvas& pyramid(Point3D centerBaseLeftFront, Point3D centerBaseRightBack, Point3D mid);
 
     // only works for cube, cuboid and pyramid, doesn't work for sphere, cylinder and cones
     // replots every point with a different primitive
