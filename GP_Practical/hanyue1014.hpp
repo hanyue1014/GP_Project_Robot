@@ -13,6 +13,7 @@ namespace Robot
 	Canvas cv(20, 20, 20);
 	Color primary = { 218, 219, 214 };
 	Color lineC = { 39, 37, 35 };
+	Color secondary = { 0, 255, 0 };
 
 	void Head()
 	{
@@ -89,32 +90,135 @@ namespace Robot
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				;
 				
-			// just styles for upper arm eh bola	
-			// TODO left hand is abit weird, maybe do checks?
 			cv.reflect(REFLECT_Y, pos == POSITION_LEFT);
+			// just styles for upper arm eh bola	
 			cv
 				.pushMatrix()
 				.rotate(90, -1, 0, 0)
-				.cuboid({ -1, 1, 1.2, primary }, { 0, -1, 1.1 })
+				.cuboid({ -1, 1, 1.3, primary }, { 0.3, -1, 1.1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ 0.3, 1, 1.3, primary }, { 1.2, 1, 1.1 }, { 0.3, 0.1, 1.3 }, { 0.6, 0.1, 1.1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ -1, 1.2, 1.3, primary }, { 1.2, 1, -1.3 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ -1, 1, -1.3, primary }, { 0.3, -1, -1.1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ 0.3, 1, -1.3, primary }, { 1.2, 1, -1.1 }, { 0.3, 0.1, -1.3 }, { 0.6, 0.1, -1.1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ 1.4, 2, 1.3, primary }, { 2, 2, -1.3 }, { 0.3, 1.2, 1.3 }, { 1.4, 1.2, -1.3 })
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				.popMatrix()
 				;
-			// reset reflections
-			cv.reflect();
+			// styles for upper arm
+			cv
+				.cuboid({ -0.5, 1.5, upperArmLength - 1, primary }, { 0.5, 1.5, 2 }, { -1, 1, upperArmLength }, { 1, 1, 1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, upperArmLength - 1, primary }, { 0.5, 1.5, 2 }, { -1, 1, upperArmLength }, { 1, 1, 1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(180, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, upperArmLength - 1, primary }, { 0.5, 1.5, 2 }, { -1, 1, upperArmLength }, { 1, 1, 1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, upperArmLength - 1, primary }, { 0.5, 1.5, 2 }, { -1, 1, upperArmLength }, { 1, 1, 1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.popMatrix()
+				;
 
 			cv
-				.pushMatrix()
+				.pushMatrix() // lower arm rotations
 				.translate(0, 0, 6)
 				.rotate(jointYRotation, 0, 1, 0)
 				.rotate(jointAngle, 1, 0, 0) // elbow bola
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
 				.cuboid({ -1, 1, -1, {255, 255, 0} }, { 1, -1, -(0 + botArmLength) }) // 0 cuz wanna factor in the bola as well
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				;
+
+			// lower arm styles
+			cv
+				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(180, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
 				.popMatrix()
 				;
+
+			// reset reflections
+			cv.reflect();
+
+			// blade like structure
+			cv
+				.pushMatrix()
+				.rotate(90, 0, 0, pos == POSITION_LEFT ? 1 : -1)
+				.cuboid({ -0.5, 1.5, -(botArmLength - 1), secondary }, { 0.5, 1.5, -1 }, { 0, 2.5, -(botArmLength - 3) }, {0, 2.5, botArmLength - 2})
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				;
+
+			cv.popMatrix(); // lower arm rotations
+				
 			cv.popMatrix(); // from root
 
 			cv.popMatrix();
+		}
+
+		void debugLowerArm()
+		{
+			cv
+				.pushMatrix() // lower arm rotations
+				//.translate(0, 0, 6)
+				//.rotate(jointYRotation, 0, 1, 0)
+				//.rotate(jointAngle, 1, 0, 0) // elbow bola
+				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
+				.cuboid({ -1, 1, -1, {255, 255, 0} }, { 1, -1, -(0 + botArmLength) }) // 0 cuz wanna factor in the bola as well
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				;
+
+			// lower arm styles
+			cv
+				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(180, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.popMatrix()
+				;
+
+			// blade like structure
+			cv
+				.cuboid({ -0.5, 1.5, -(botArmLength - 1), secondary }, { 0.5, 1.5, -2 }, { 0, 3, -(botArmLength - 2) }, {0, 3, botArmLength - 2})
+				;
+
+			cv.popMatrix(); // lower arm rotations
 		}
 
 		// only works if x = 0 after normalized
@@ -312,8 +416,7 @@ namespace Robot
 	float leftHandRootYRotation = leftHandRootRestYRotation;
 	float leftHandJointYRotation = leftHandJointRestYRotation;
 
-	Point3D leftHandRestTarget = { -5, -1.5, 1 };
-	// TODO: add handTargets and when walking
+	Point3D leftHandRestTarget = { -5, -3, 0 };
 	Point3D leftHandWalkTargets[] = {
 		{ -5, -1.5, 0 },
 		{ -5, -0.5, -1},
@@ -342,9 +445,8 @@ namespace Robot
 	float rightHandJointRestYRotation = 0;
 	float rightHandRootYRotation = rightHandRootRestYRotation;
 	float rightHandJointYRotation = rightHandJointRestYRotation;
-	Point3D handTargetDebug = { 5, -1.5, 1, {200, 255, 255} };
 
-	Point3D rightHandRestTarget = { 5, -1.5, 1 };
+	Point3D rightHandRestTarget = { 5, -3, 0 };
 	Point3D rightHandWalkTargets[] = {
 		{ 5, -1.5, 2 },
 		{ 5, -0.5, 3 },
@@ -457,8 +559,6 @@ namespace Robot
 			;
 		// upper body
 		cv
-			.cube({ 0, 1.5, 0, {255, 255, 0} }, 0.5)
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			.cuboid(
 				{ -1.5, 3, 1.5, {255, 0, 0} },
 				{ 1.5, 3, -1.5 },
@@ -525,6 +625,10 @@ namespace Robot
 
 		cv.popMatrix();
 
+		cv
+			.cube({ 0, 1.5, 0, {255, 255, 0} }, 0.5) // upper body join lower body eh part
+			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			;
 		// lower body
 		cv
 			.cuboid({ -1, -1, 1, {0, 0, 255} }, { 1, -3, -1 })
@@ -559,18 +663,6 @@ namespace Robot
 		{
 		case 'W': 
 			isWalking = true;
-			break;
-		case VK_UP:
-			handTargetDebug.y += 0.5;
-			break;
-		case VK_DOWN:
-			handTargetDebug.y -= 0.5;
-			break;
-		case VK_LEFT:
-			handTargetDebug.z += 0.5;
-			break;
-		case VK_RIGHT:
-			handTargetDebug.z -= 0.5;
 			break;
 		}
 	}
