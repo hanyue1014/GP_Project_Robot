@@ -55,6 +55,21 @@ void Canvas::plot2D(Point2D p)
     glVertex2f(p.x * (reflectY ? -1 : 1) / (float)width, p.y * (reflectZ ? -1 : 1) / (float)height);
 }
 
+std::vector<Point3D> Canvas::getCurvePoints(Point3D center, float rx, float ry, float startAngle, float fullAngle, int vertexCount)
+{
+    std::vector<Point3D> ps;
+
+    const float anglePerSegment = fullAngle / vertexCount;
+    for (int i = 0; i <= vertexCount; i++)
+    {
+        float x = rx * cos(anglePerSegment * i + startAngle) + center.x;
+        float y = ry * sin(anglePerSegment * i + startAngle) + center.y;
+        ps.push_back({ x, y, center.z, center.c });
+    }
+
+    return ps;
+}
+
 void Canvas::ellipsePlot2D(
     Point2D center,
     float rx, float ry,

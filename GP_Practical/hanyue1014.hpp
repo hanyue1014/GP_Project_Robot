@@ -64,6 +64,48 @@ namespace Robot
 			;
 	}
 
+	class Finger {
+	private:
+		float newX, newY, newZ;
+		// fingers only have one axis rotation freedom
+		float rootAngle = 75, jointAngle = 90;
+		float rootRotateZ = 0; // only will use tiok for thumb
+		float topPartLength = 0; // only will be diff for thumb
+		Position pos; // cuz if left then rotate eh direction diff
+	public:
+		Finger(Point3D p, Position pos = POSITION_RIGHT) : newX(p.x), newY(p.y), newZ(p.z), pos(pos) {}
+		// finger total length will be 1.5 only
+		void draw()
+		{
+			// top part of a finger
+			cv
+				.pushMatrix()
+				.translate(newX, newY, newZ)
+				.rotate(rootRotateZ, pos == POSITION_RIGHT ? -1 : 1, 0, 0)
+				.rotate(rootAngle, 0, 0, pos == POSITION_RIGHT ? -1 : 1)
+				.sphere({ 0, 0, 0, {255, 0, 0} }, 0.125)
+				.cuboid({ -0.125, -0.125, 0.125, {255, 255, 0} }, { 0.125, -0.5, -0.125 })
+				;
+
+			// bottom part
+			cv
+				.pushMatrix()
+				.translate(0, -0.625, 0)
+				.rotate(jointAngle, 0, 0, pos == POSITION_RIGHT ? -1 : 1)
+				.sphere({ 0, 0, 0, {255, 0, 0} }, 0.125)
+				.cuboid({ -0.125, -0.125, 0.125, {255, 255, 0} }, { 0.125, -0.875, -0.125 })
+				.popMatrix()
+				;
+
+			cv.popMatrix();
+		}
+
+		void forceRotateX(float a)
+		{
+			rootRotateZ = a;
+		}
+	};
+
 	class Hand
 	{
 	private:
@@ -168,8 +210,46 @@ namespace Robot
 			cv
 				.pushMatrix()
 				.rotate(90, 0, 0, pos == POSITION_LEFT ? 1 : -1)
-				.cuboid({ -0.5, 1.5, -(botArmLength - 1), secondary }, { 0.5, 1.5, -1 }, { 0, 2.5, -(botArmLength - 3) }, {0, 2.5, botArmLength - 2})
+				.cuboid({ -0.5, 1.5, -(botArmLength - 1), primary }, { 0.5, 1.5, -1 }, { -0.75, 2.5, -(botArmLength - 3) }, { 0.75, 2.5, botArmLength - 2 })
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(27.5, 0, 0, 1)
+				.cuboid({ 0, 1.5, -(botArmLength - 1), secondary }, { 0.5, 1.5, -1 }, { -0.75, 2.5, -(botArmLength - 3) }, { 0.5, 2.5, botArmLength - 2 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(-27.5, 0, 0, 1)
+				.cuboid({ -0.5, 1.5, -(botArmLength - 1), secondary }, { 0, 1.5, -1 }, { -0.75, 2.5, -(botArmLength - 3) }, { 0.5, 2.5, botArmLength - 2 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.popMatrix()
+				;
+
+			// le palm + fingers
+			cv
+				.pushMatrix()
+				.rotate(90, 1, 0, 0)
+				.translate(0, -5, 0) // cuz above alrd translate 6 d
+				.cuboid({ -0.25, 0, 0.5, primary }, { 0.25, 0, -0.5 }, { -0.25, -0.5, 0.75 }, { 0.25, -0.5, -0.75 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ -0.25, -0.5, 0.75, primary }, { 0.25, -1.5, -0.75 }) // real palm
+				;
+
+			// fingers
+			//Finger index({  });
+			// index finger -> pinky
+			for (int i = 0; i < 4; i++)
+			{
+				Finger f({ 0, -(1.5 + 0.125), -(0.75f - ((i+1) * 0.225f) - (i * 0.125f)) }, pos);
+				f.draw();
+			}
+
+			// thumb
+			Finger thumb({ 0, -0.75, 0.875 }, pos);
+			thumb.forceRotateX(75);
+			thumb.draw();
+
+			cv
 				.popMatrix()
 				;
 
@@ -178,47 +258,6 @@ namespace Robot
 			cv.popMatrix(); // from root
 
 			cv.popMatrix();
-		}
-
-		void debugLowerArm()
-		{
-			cv
-				.pushMatrix() // lower arm rotations
-				//.translate(0, 0, 6)
-				//.rotate(jointYRotation, 0, 1, 0)
-				//.rotate(jointAngle, 1, 0, 0) // elbow bola
-				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
-				.cuboid({ -1, 1, -1, {255, 255, 0} }, { 1, -1, -(0 + botArmLength) }) // 0 cuz wanna factor in the bola as well
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
-				;
-
-			// lower arm styles
-			cv
-				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
-				.pushMatrix()
-				.rotate(90, 0, 0, 1)
-				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
-				.popMatrix()
-				.pushMatrix()
-				.rotate(180, 0, 0, 1)
-				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
-				.pushMatrix()
-				.rotate(90, 0, 0, 1)
-				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
-				.popMatrix()
-				.popMatrix()
-				;
-
-			// blade like structure
-			cv
-				.cuboid({ -0.5, 1.5, -(botArmLength - 1), secondary }, { 0.5, 1.5, -2 }, { 0, 3, -(botArmLength - 2) }, {0, 3, botArmLength - 2})
-				;
-
-			cv.popMatrix(); // lower arm rotations
 		}
 
 		// only works if x = 0 after normalized
@@ -305,6 +344,35 @@ namespace Robot
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				;
 
+			// upper leg style
+			cv
+				.cuboid({ -0.75, -1.3, 1.5, primary }, { 0.75, -1.5, -6 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ 0.75, -1.5, 1.5, primary }, { 0.75, -1.3, -6 }, { 1.5, -1, 1 }, { 1.5, -0.75, -5 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.reflect(REFLECT_Y, true) // direct use reflect, lazy  rewrite d
+				.replotPrevBlocky3D(GL_QUADS, primary)
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.reflect()
+				;
+				
+			// "armor"
+			// side way and back no need got "floating shield"
+			cv
+				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(180, 0, 0, 1)
+				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				;
+
 			cv
 				.pushMatrix()
 				// knee joint
@@ -313,7 +381,33 @@ namespace Robot
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
 				.cuboid({ -1, 1, 1, {255, 255, 0} }, { 1, -1, 5 })
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				;
+
+			cv
+				.pushMatrix()
+				.rotate(180, 1, 0, 0)
+				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				.popMatrix()
+				.pushMatrix()
+				.rotate(270, 0, 0, 1)
+				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(180, 0, 0, 1)
+				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				.popMatrix()
+				;
+				
+			cv
+				.popMatrix() // knee
 				;
 			cv.popMatrix();
 
@@ -418,26 +512,27 @@ namespace Robot
 
 	Point3D leftHandRestTarget = { -5, -3, 0 };
 	Point3D leftHandWalkTargets[] = {
-		{ -5, -1.5, 0 },
-		{ -5, -0.5, -1},
-		{ -5, -0.5, -2 },
-		{ -5, 0.5, -3 },
-		{ -5, 1.5, -4 }, // max back point
-		{ -5, 0.5, -3 },
-		{ -5, -0.5, -2 },
-		{ -5, -0.5, -1 },
-		{ -5, -1.5, 0 },
+		{ -5, -1.5, 1 }, // swing backward
+		{ -5, -2, 0 },
+		{ -5, -1.5, -1},
+		{ -5, -1, -2 },
+		{ -5, -0.5, -3 },
+		{ -5, 0.5, -4 }, // max back point
+		{ -5, -0.5, -3 },
+		{ -5, -1, -2 },
+		{ -5, -1.5, -1 },
+		{ -5, -2, 0 },
+		{ -5, -1.5, 1 },	// resting position, swing back forward
 		{ -5, -1.5, 1 },
-		{ -5, -1.5, 2 },
 		{ -5, -0.5, 3 },
-		{ -5, -0.5, 4 },
+		{ -5, 0, 4 },
 		{ -5, 0.5, 5 },
 		{ -5, 1.5, 6 }, // max point
 		{ -5, 0.5, 5 },
-		{ -5, -0.5, 4 },
+		{ -5, 0, 4 },
 		{ -5, -0.5, 3 },
-		{ -5, -1.5, 2 },
-		{ -5, -1.5, 1 }, // swing forward and back to rest position
+		{ -5, -1, 2 },
+
 	};
 	Point3D leftHandCurrentTarget = leftHandRestTarget;
 
@@ -448,25 +543,25 @@ namespace Robot
 
 	Point3D rightHandRestTarget = { 5, -3, 0 };
 	Point3D rightHandWalkTargets[] = {
-		{ 5, -1.5, 2 },
+		{ 5, -1.5, 1 },
 		{ 5, -0.5, 3 },
-		{ 5, -0.5, 4 },
+		{ 5, 0, 4 },
 		{ 5, 0.5, 5 },
 		{ 5, 1.5, 6 }, // max point
 		{ 5, 0.5, 5 },
-		{ 5, -0.5, 4 },
+		{ 5, 0, 4 },
 		{ 5, -0.5, 3 },
-		{ 5, -1.5, 2 },
-		{ 5, -1.5, 1 }, // swing forward and back to rest position
-		{ 5, -1.5, 0 },
-		{ 5, -0.5, -1},
-		{ 5, -0.5, -2 },
-		{ 5, 0.5, -3 },
-		{ 5, 1.5, -4 }, // max back point
-		{ 5, 0.5, -3 },
-		{ 5, -0.5, -2 },
-		{ 5, -0.5, -1 },
-		{ 5, -1.5, 0 },
+		{ 5, -1, 2 },
+		{ 5, -1.5, 1 }, // swing backward
+		{ 5, -2, 0 },
+		{ 5, -1.5, -1},
+		{ 5, -1, -2 },
+		{ 5, -0.5, -3 },
+		{ 5, 0.5, -4 }, // max back point
+		{ 5, -0.5, -3 },
+		{ 5, -1, -2 },
+		{ 5, -1.5, -1 },
+		{ 5, -2, 0 },
 		{ 5, -1.5, 1 },
 	};
 	Point3D rightHandCurrentTarget = rightHandRestTarget;
@@ -480,16 +575,16 @@ namespace Robot
 	{
 		if (isWalking)
 		{
+			int walkAnimCount = sizeof(leftLegWalkTargets) / sizeof(leftLegWalkTargets[0]);
 
 			// walking leg animation
-			leftLegCurrentTarget = tween(leftLegWalkTargets[walkingAnimationIndex], leftLegWalkTargets[walkingAnimationIndex + 1], walkingTweenProgress += 0.05);
-			rightLegCurrentTarget = tween(rightLegWalkTargets[walkingAnimationIndex], rightLegWalkTargets[walkingAnimationIndex + 1], walkingTweenProgress);
+			leftLegCurrentTarget = tween(leftLegWalkTargets[walkingAnimationIndex], leftLegWalkTargets[walkingAnimationIndex + 1 >= walkAnimCount ? 0 : walkingAnimationIndex + 1], walkingTweenProgress += 0.05);
+			rightLegCurrentTarget = tween(rightLegWalkTargets[walkingAnimationIndex], rightLegWalkTargets[walkingAnimationIndex + 1 >= walkAnimCount ? 0 : walkingAnimationIndex + 1], walkingTweenProgress);
 
 			// walking hand animation
-			rightHandCurrentTarget = tween(rightHandWalkTargets[walkingAnimationIndex], rightHandWalkTargets[walkingAnimationIndex + 1], walkingTweenProgress);
-			leftHandCurrentTarget = tween(leftHandWalkTargets[walkingAnimationIndex], leftHandWalkTargets[walkingAnimationIndex + 1], walkingTweenProgress);
+			rightHandCurrentTarget = tween(rightHandWalkTargets[walkingAnimationIndex], rightHandWalkTargets[walkingAnimationIndex + 1 >= walkAnimCount ? 0 : walkingAnimationIndex + 1], walkingTweenProgress);
+			leftHandCurrentTarget = tween(leftHandWalkTargets[walkingAnimationIndex], leftHandWalkTargets[walkingAnimationIndex + 1 >= walkAnimCount ? 0 : walkingAnimationIndex + 1], walkingTweenProgress);
 
-			int walkAnimCount = sizeof(leftLegWalkTargets) / sizeof(leftLegWalkTargets[0]);
 
 			// first half of the 
 			// at index == 10 and 20 eh time rotation should be 0
@@ -631,7 +726,7 @@ namespace Robot
 			;
 		// lower body
 		cv
-			.cuboid({ -1, -1, 1, {0, 0, 255} }, { 1, -3, -1 })
+			.cuboid({ -1, -1, 1, {0, 0, 255} }, { 1, -1, -1 }, { -0.5, -2, 0.5 }, { 0.5, -2, -0.5 })
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			.cuboid(
 				{ -1.5, 0, 1.5, {0, 255, 255} },

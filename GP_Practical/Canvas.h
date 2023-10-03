@@ -52,6 +52,8 @@ private:
     bool reflectY = false;
     bool reflectZ = false;
     void plot2D(Point2D p);
+    // gives back a list of Point3Ds that forms a curve line, but plot on a xy plane only, z is used to translate it out only
+    std::vector<Point3D> getCurvePoints(Point3D center, float rx, float ry, float startAngle, float fullAngle, int vertexCount);
     // calculate the point to plot to get an ellipsis
     void ellipsePlot2D(Point2D center, float rx, float ry, float rotation, float startAngle, float fullAngle, int vertexCount, bool clockwise = false);
     void plot3D(Point3D p);
