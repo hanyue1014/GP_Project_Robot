@@ -68,9 +68,9 @@ namespace Robot
 	private:
 		float newX, newY, newZ;
 		// fingers only have one axis rotation freedom
-		float rootAngle = 75, jointAngle = 90;
-		float rootRotateZ = 0; // only will use tiok for thumb
-		float topPartLength = 0; // only will be diff for thumb
+		float rootAngle = 0, jointAngle = 0;
+		float rootRotateX = 0; // only will use tiok for thumb
+		float topLength = 0.375, botLength = 0.75; // only will be diff for thumb
 		Position pos; // cuz if left then rotate eh direction diff
 	public:
 		Finger(Point3D p, Position pos = POSITION_RIGHT) : newX(p.x), newY(p.y), newZ(p.z), pos(pos) {}
@@ -81,31 +81,58 @@ namespace Robot
 			cv
 				.pushMatrix()
 				.translate(newX, newY, newZ)
-				.rotate(rootRotateZ, pos == POSITION_RIGHT ? -1 : 1, 0, 0)
+				.rotate(rootRotateX, pos == POSITION_RIGHT ? -1 : 1, 0, 0)
 				.rotate(rootAngle, 0, 0, pos == POSITION_RIGHT ? -1 : 1)
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 0.125)
-				.cuboid({ -0.125, -0.125, 0.125, {255, 255, 0} }, { 0.125, -0.5, -0.125 })
+				.cuboid({ -0.125, -0.125, 0.125, {255, 255, 0} }, { 0.125, -(0.125f + topLength), -0.125 })
 				;
 
 			// bottom part
 			cv
 				.pushMatrix()
-				.translate(0, -0.625, 0)
+				.translate(0, -(0.25 + topLength), 0)
 				.rotate(jointAngle, 0, 0, pos == POSITION_RIGHT ? -1 : 1)
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 0.125)
-				.cuboid({ -0.125, -0.125, 0.125, {255, 255, 0} }, { 0.125, -0.875, -0.125 })
+				.cuboid({ -0.125, -0.125, 0.125, {255, 255, 0} }, { 0.125, -(0.125f + botLength), -0.125 })
 				.popMatrix()
 				;
 
 			cv.popMatrix();
 		}
 
+		void setAngle(float root, float joint)
+		{
+			rootAngle = root;
+			jointAngle = joint;
+		}
+
+		// all these normally only used for thumb
 		void forceRotateX(float a)
 		{
-			rootRotateZ = a;
+			rootRotateX = a;
+		}
+
+		void setLength(float top, float bot)
+		{
+			topLength = top;
+			botLength = bot;
 		}
 	};
 
+	// for grip animation
+	float gripTweenProgress = 0;
+	bool _isGripping = false;
+	float fingerLastGripRootAngle = 0, fingerCurrentGripRootAngle = 0;
+	float fingerLastGripJointAngle = 0, fingerCurrentGripJointAngle = 0;
+	float thumbLastGripRootAngle = 0, thumbCurrentGripRootAngle = 0;
+	float thumbLastGripJointAngle = 0, thumbCurrentGripJointAngle = 0;
+	// tested - grip angles for the fingers
+	float fingerGripRoot = 85, thumbGripRoot = 45,
+		fingerGripJoint = 90, thumbGripJoint = 90;
+
+	// to keep track whether gripping is animating in progress
+	bool startGripping = false;
+	bool startUnGripping = false;
 	class Hand
 	{
 	private:
@@ -114,6 +141,7 @@ namespace Robot
 		float jointAngle = 180, jointYRotation = 0;
 		const float upperArmLength = 5, botArmLength = 5;
 		Position pos;
+
 	public:
 		// creates the hand at the position, default to right
 		Hand(Point3D p, Position pos = POSITION_RIGHT) : newX(p.x), newY(p.y), newZ(p.z), pos(pos) {}
@@ -241,12 +269,15 @@ namespace Robot
 			for (int i = 0; i < 4; i++)
 			{
 				Finger f({ 0, -(1.5 + 0.125), -(0.75f - ((i+1) * 0.225f) - (i * 0.125f)) }, pos);
+				f.setAngle(fingerCurrentGripRootAngle, fingerCurrentGripJointAngle);
 				f.draw();
 			}
 
 			// thumb
 			Finger thumb({ 0, -0.75, 0.875 }, pos);
-			thumb.forceRotateX(75);
+			thumb.setLength(0.375, 0.375);
+			thumb.forceRotateX(pos == POSITION_RIGHT ? 90 : -90);
+			thumb.setAngle(thumbCurrentGripRootAngle, thumbCurrentGripJointAngle);
 			thumb.draw();
 
 			cv
@@ -310,6 +341,60 @@ namespace Robot
 				theta = 0;
 			}
 			jointAngle = theta * 2;
+		}
+
+		// tells the hand to start gripping
+		void grip(bool shouldGrip)
+		{
+			if (shouldGrip && !_isGripping)
+			{
+				if (!startGripping)
+				{
+					startGripping = true;
+					gripTweenProgress = 0;
+					startUnGripping = false;
+				}
+				// rest angle for all the fingers are 0
+				fingerLastGripRootAngle = fingerCurrentGripRootAngle = tween(0, fingerGripRoot, gripTweenProgress += 0.01);
+				thumbLastGripRootAngle = thumbCurrentGripRootAngle = tween(0, thumbGripRoot, gripTweenProgress);
+				fingerLastGripJointAngle = fingerCurrentGripJointAngle = tween(0, fingerGripJoint, gripTweenProgress);
+				thumbLastGripJointAngle = thumbCurrentGripJointAngle = tween(0, thumbGripJoint, gripTweenProgress);
+				if (gripTweenProgress >= 1)
+				{
+					_isGripping = true;
+					startGripping = false;
+					gripTweenProgress = 0;
+					fingerLastGripRootAngle = fingerCurrentGripRootAngle = fingerGripRoot;
+					thumbLastGripRootAngle = thumbCurrentGripRootAngle = thumbGripRoot;
+					fingerLastGripJointAngle = fingerCurrentGripJointAngle = fingerGripJoint;
+					thumbLastGripJointAngle = thumbCurrentGripJointAngle = thumbGripJoint;
+				}
+			}
+			else if (!shouldGrip && (_isGripping || fingerCurrentGripJointAngle != 0 || thumbCurrentGripJointAngle != 0 || fingerCurrentGripRootAngle != 0 || thumbCurrentGripJointAngle != 0))
+			{
+				if (!startUnGripping)
+				{
+					startUnGripping = true;
+					gripTweenProgress = 0;
+					startGripping = false;
+				}
+				fingerCurrentGripRootAngle = tween(fingerLastGripRootAngle, 0, gripTweenProgress += 0.01);
+				thumbCurrentGripRootAngle = tween(thumbLastGripRootAngle, 0, gripTweenProgress);
+				fingerCurrentGripJointAngle = tween(fingerLastGripJointAngle, 0, gripTweenProgress);
+				thumbCurrentGripJointAngle = tween(thumbLastGripJointAngle, 0, gripTweenProgress);
+				if (gripTweenProgress >= 1)
+				{
+					_isGripping = false;
+					startGripping = false;
+					gripTweenProgress = 0;
+					fingerLastGripRootAngle = fingerCurrentGripRootAngle = thumbLastGripRootAngle = thumbCurrentGripRootAngle = fingerLastGripJointAngle = fingerCurrentGripJointAngle = thumbLastGripJointAngle = thumbCurrentGripJointAngle = 0;
+				}
+			}
+		}
+
+		bool isGripping()
+		{
+			return _isGripping;
 		}
 
 		void forceYRotation(float rootYRot, float jointYRot)
@@ -571,6 +656,9 @@ namespace Robot
 	float stopWalkingTweenProgress = 0;
 	float bodyCurrentWalkRotation = 0, maxBodyWalkRotation = 10, lastRotationBeforeStopWalking = 0;
 
+	// debug purpose (test grip)
+	bool shouldGrip = false;
+
 	void main()
 	{
 		if (isWalking)
@@ -708,14 +796,14 @@ namespace Robot
 
 		Hand rightHand({ 5, 8, 0 });
 		rightHand.solveIK(rightHandCurrentTarget);
-		//cv.pointSize(20).point(handTargetDebug).pointSize(1);
-		//rightHand.solveIK(handTargetDebug);
 		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation);
+		rightHand.grip(shouldGrip);
 		rightHand.draw();
 
 		Hand leftHand({ -5, 8, 0 }, POSITION_LEFT);
 		leftHand.solveIK(leftHandCurrentTarget);
 		leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation);
+		leftHand.grip(shouldGrip);
 		leftHand.draw();
 
 		cv.popMatrix();
@@ -759,6 +847,9 @@ namespace Robot
 		case 'W': 
 			isWalking = true;
 			break;
+		case 'G':
+			shouldGrip = !shouldGrip;
+			break;
 		}
 	}
 
@@ -768,8 +859,6 @@ namespace Robot
 		{
 		case 'W':
 			isWalking = false;
-			break;
-		default:
 			break;
 		}
 	}
