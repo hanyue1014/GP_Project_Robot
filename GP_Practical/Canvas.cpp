@@ -28,10 +28,31 @@ Canvas& Canvas::setColor(Color c)
     return *this;
 }
 
+Canvas& Canvas::reflect()
+{
+    reflectX = reflectY = reflectZ = false;
+
+    return *this;
+}
+
+Canvas& Canvas::reflect(ReflectAxis ra, bool enable)
+{
+    if (ra == REFLECT_X || ra == REFLECT_ALL)
+        reflectX = enable;
+    
+    if (ra == REFLECT_Y || ra == REFLECT_ALL)
+        reflectY = enable;
+
+    if (ra == REFLECT_Z || ra == REFLECT_ALL)
+        reflectZ = enable;
+
+    return *this;
+}
+
 void Canvas::plot2D(Point2D p)
 {
     setColor(p.c);
-    glVertex2f(p.x / (float)width, p.y / (float)height);
+    glVertex2f(p.x * (reflectY ? -1 : 1) / (float)width, p.y * (reflectZ ? -1 : 1) / (float)height);
 }
 
 void Canvas::ellipsePlot2D(
@@ -67,7 +88,7 @@ void Canvas::ellipsePlot2D(
 void Canvas::plot3D(Point3D p)
 {
     setColor(p.c);
-    glVertex3f(p.x / (float)width, p.y / (float)height, p.z / (float)depth);
+    glVertex3f(p.x * (reflectY ? -1 : 1) / (float)width, p.y * (reflectZ ? -1 : 1) / (float)height, p.z * (reflectX ? -1 : 1) / (float)depth);
     prev3DPoints.push_back(p);
 }
 

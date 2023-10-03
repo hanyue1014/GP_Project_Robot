@@ -32,6 +32,10 @@ struct Point3D {
     bool operator!=(const Point3D& o) { return x != o.x || y != o.y || z != o.z; }
 };
 
+// to enable reflection (each is 2 planes) [X => z = -z, Y => x = -x, Z => y = -y]
+// will see in the future whether need to expand to 3D or not
+enum ReflectAxis { REFLECT_X, REFLECT_Y, REFLECT_Z, REFLECT_ALL };
+
 enum ProjectionMode { ORTHO, PERSPECTIVE };
 
 // normally the whole window is our canvas
@@ -44,6 +48,9 @@ private:
     Color currColor;
     std::vector<Point3D> prev3DPoints;
     bool isTracking = false;
+    bool reflectX = false;
+    bool reflectY = false;
+    bool reflectZ = false;
     void plot2D(Point2D p);
     // calculate the point to plot to get an ellipsis
     void ellipsePlot2D(Point2D center, float rx, float ry, float rotation, float startAngle, float fullAngle, int vertexCount, bool clockwise = false);
@@ -53,6 +60,10 @@ public:
     // create a canvas with width, height and depth (does not affect actual size, this is just used to scale down from int to GLFloat)
     Canvas(int width, int height, int depth);
     Canvas& setColor(Color c);
+    // resets all reflections
+    Canvas& reflect();
+    // toggles reflection on axis
+    Canvas& reflect(ReflectAxis ra, bool enable);
     // clear canvas with c as background color
     Canvas& clear(Color c = { 0, 0, 0 });
     // renders a debug grid behind (scale 1 unit at a time (10 (-10 -> 10) x 10 canvas will have 400 rects))

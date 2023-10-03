@@ -6,6 +6,9 @@
 
 namespace Robot
 {
+	// for hand and leg use, define position so place wont weird weird eh
+	enum Position { POSITION_LEFT, POSITION_RIGHT };
+
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
 	Color primary = { 218, 219, 214 };
@@ -67,9 +70,10 @@ namespace Robot
 		float rootAngle = 0, rootYRotation = 0;
 		float jointAngle = 180, jointYRotation = 0;
 		const float upperArmLength = 5, botArmLength = 5;
+		Position pos;
 	public:
-		// creates the hand at the position
-		Hand(Point3D p) : newX(p.x), newY(p.y), newZ(p.z) {}
+		// creates the hand at the position, default to right
+		Hand(Point3D p, Position pos = POSITION_RIGHT) : newX(p.x), newY(p.y), newZ(p.z), pos(pos) {}
 
 		void draw()
 		{
@@ -79,10 +83,24 @@ namespace Robot
 				.pushMatrix()
 				.rotate(rootYRotation, 0, 1, 0)
 				.rotate(rootAngle, 1, 0, 0)
+				// basic skeleton
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1) // root bola
 				.cuboid({ -1, 1, 1, {255, 255, 0} }, { 1, -1, (0 + upperArmLength) }) // 0 cuz wanna factor in the bola
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				;
+				
+			// just styles for upper arm eh bola	
+			// TODO left hand is abit weird, maybe do checks?
+			cv.reflect(REFLECT_Y, pos == POSITION_LEFT);
+			cv
+				.pushMatrix()
+				.rotate(90, -1, 0, 0)
+				.cuboid({ -1, 1, 1.2, primary }, { 0, -1, 1.1 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.popMatrix()
+				;
+			// reset reflections
+			cv.reflect();
 
 			cv
 				.pushMatrix()
@@ -500,7 +518,7 @@ namespace Robot
 		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation);
 		rightHand.draw();
 
-		Hand leftHand({ -5, 8, 0 });
+		Hand leftHand({ -5, 8, 0 }, POSITION_LEFT);
 		leftHand.solveIK(leftHandCurrentTarget);
 		leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation);
 		leftHand.draw();
