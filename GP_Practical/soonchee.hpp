@@ -487,7 +487,7 @@ namespace SoonChee
 		glPopMatrix();
 	}
 
-	void hammer(float width, float length)
+	void hammerBuild(float width, float length)
 	{
 		glBegin(GL_LINE_LOOP);
 		//bottom face 1
@@ -549,12 +549,12 @@ namespace SoonChee
 		drawSqu(0.4, 0.2);
 		glPushMatrix();
 		glRotatef(90, 0, 0, 1);
-		hammer(0.2, 0.2);
+		hammerBuild(0.2, 0.2);
 		glPopMatrix();
 		glPushMatrix();
 		glRotatef(-90, 0, 0, 1);
 		glTranslatef(-0.2, 0.4, 0);
-		hammer(0.2, 0.2);
+		hammerBuild(0.2, 0.2);
 		glPopMatrix();
 		glPushMatrix();
 		glRotatef(90, 1, 0, 0);
