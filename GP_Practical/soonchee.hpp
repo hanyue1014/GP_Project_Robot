@@ -215,10 +215,10 @@ namespace SoonChee
 
 	void drawShield(float width, float length)
 	{
-		glPushMatrix();
+		//glPushMatrix();
 		//glColor3f(1, 1, 0);
-		rect(0.2);
-		glPopMatrix();
+		//rect(0.2);
+		//glPopMatrix();
 
 		//glClearColor(1, 1, 1, 1);
 		//glColor3f(1, 1, 1);
@@ -478,12 +478,20 @@ namespace SoonChee
 
 	void shield()
 	{
+		glRotatef(1, 0, 1, 0);
+		//shield
 		glPushMatrix();
 		glTranslatef(0, -0.5, 0);
-		glColor3f(1, 0.5, 0.5);
+		glColor3f(1, 0, 1);
 		drawShield(0.5, 0.1);
 		glColor3f(1, 1, 1);
 		drawShieldLine(0.4, 0.1);
+		glPopMatrix();
+		//+ sign
+		glPushMatrix();
+		glTranslatef(0, 0, 0.9);
+		glColor3f(1, 1, 0);
+		rect(0.2);
 		glPopMatrix();
 	}
 
