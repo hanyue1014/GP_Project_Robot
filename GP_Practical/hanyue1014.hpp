@@ -825,7 +825,8 @@ namespace Robot
 			}
 		}
 
-		if (setShieldActive && !shieldActivated)
+		// when equipping sword cannot activate otherwise will crash (sword too long, thanks soon chee ;))
+		if (setShieldActive && !shieldActivated && !(swordState == SWORD_EQUIPPED)) 
 		{
 			if (!shieldActivating)
 			{
