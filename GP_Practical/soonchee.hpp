@@ -472,7 +472,7 @@ namespace SoonChee
 	void shield()
 	{
 		glPushMatrix();
-		glTranslatef(0, -0.5, 0);
+		glTranslatef(-0.5, -0.5, 0);
 		glColor3f(1, 0.5, 0.5);
 		drawShield(0.5, 0.1);
 		glColor3f(1, 1, 1);
