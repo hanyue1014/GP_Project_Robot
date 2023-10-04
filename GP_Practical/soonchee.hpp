@@ -204,7 +204,7 @@ namespace SoonChee
 
 	void rect(float size)
 	{
-		glColor3f(1, 1, 0);
+		//glColor3f(1, 1, 0);
 		glBegin(GL_QUADS);
 		glVertex2f(0, 0);
 		glVertex2f(size, 0.0);
@@ -216,12 +216,15 @@ namespace SoonChee
 	void drawShield(float width, float length)
 	{
 		glPushMatrix();
-		//glColor3f(1, 1, 0);
+		glTranslatef(0, 0, length + 0.001);
+
+		
+		glColor3f(1, 1, 1);
 		rect(0.2);
 		glPopMatrix();
 
 		//glClearColor(1, 1, 1, 1);
-		//glColor3f(1, 1, 1);
+		glColor3f(1, 0.5, 1);
 		glBegin(GL_QUADS);
 		//bottom face 1
 		//glColor3f(1.0, 1.0, 1.0); //red
@@ -229,45 +232,35 @@ namespace SoonChee
 		glVertex3f(width, 0.0, length);
 		glVertex3f(width, 0.0, 0.0);
 		glVertex3f(0.0, 0.0, 0.0);
-		glEnd();
-
-		glBegin(GL_QUADS);
+		
 		//left face 2
 		//glColor3f(1.0, 1.0, 1.0); //green
 		glVertex3f(0.0, 0.0, 0.0);
 		glVertex3f(0.0, width * 2, 0.0);
 		glVertex3f(0.0, width * 2, length);
 		glVertex3f(0.0, 0.0, length);
-		glEnd();
 
-		glBegin(GL_QUADS);
 		//front face 3
 		//glColor3f(1.0, 1.0, 1.0); //blue
 		glVertex3f(0.0, 0.0, length);
 		glVertex3f(0.0, width * 2, length);
 		glVertex3f(width, width * 2, length);
 		glVertex3f(width, 0.0, length);
-		glEnd();
 
-		glBegin(GL_QUADS);
 		//right face 4
 		//glColor3f(1.0, 1.0, 1.0); //yellow
 		glVertex3f(width, 0.0, length);
 		glVertex3f(width, width * 2, length);
 		glVertex3f(width, width * 2, 0.0);
 		glVertex3f(width, 0.0, 0.0);
-		glEnd();
 
-		glBegin(GL_QUADS);
 		//back face 5
 		//glColor3f(1.0, 1.0, 1.0); //cyan
 		glVertex3f(width, 0.0, 0.0);
 		glVertex3f(0.0, 0.0, 0.0);
 		glVertex3f(0.0, width * 2, 0.0);
 		glVertex3f(width, width * 2, 0.0);
-		glEnd();
 
-		glBegin(GL_QUADS);
 		//top face 6
 		//glColor3f(1.0, 1.0, 1.0); //magneta
 		glVertex3f(width, width * 2, 0.0);
