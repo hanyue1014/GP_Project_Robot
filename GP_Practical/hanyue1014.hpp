@@ -3,11 +3,14 @@
 #include "Canvas.h"
 #include "Transform.h"
 #include "Util.h"
+#include "soonchee.hpp"
 
 namespace Robot
 {
 	// for hand and leg use, define position so place wont weird weird eh
 	enum Position { POSITION_LEFT, POSITION_RIGHT };
+	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
+	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, NONE };
 
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
@@ -120,12 +123,17 @@ namespace Robot
 	};
 
 	// for grip animation
-	float gripTweenProgress = 0;
-	bool _isGripping = false;
-	float fingerLastGripRootAngle = 0, fingerCurrentGripRootAngle = 0;
-	float fingerLastGripJointAngle = 0, fingerCurrentGripJointAngle = 0;
-	float thumbLastGripRootAngle = 0, thumbCurrentGripRootAngle = 0;
-	float thumbLastGripJointAngle = 0, thumbCurrentGripJointAngle = 0;
+	struct GripAnimationVars
+	{
+		float fingerGripTweenProgress = 0;
+		bool _isGripping = false;
+		float fingerLastGripRootAngle = 0, fingerCurrentGripRootAngle = 0;
+		float fingerLastGripJointAngle = 0, fingerCurrentGripJointAngle = 0;
+		float thumbLastGripRootAngle = 0, thumbCurrentGripRootAngle = 0;
+		float thumbLastGripJointAngle = 0, thumbCurrentGripJointAngle = 0;
+	};
+	GripAnimationVars left;
+	GripAnimationVars right;
 	// tested - grip angles for the fingers
 	float fingerGripRoot = 85, thumbGripRoot = 45,
 		fingerGripJoint = 90, thumbGripJoint = 90;
@@ -133,12 +141,14 @@ namespace Robot
 	// to keep track whether gripping is animating in progress
 	bool startGripping = false;
 	bool startUnGripping = false;
+	SwordAnimStates swordState = SWORD_EQUIPPED;
 	class Hand
 	{
 	private:
 		float newX, newY, newZ; // marks the newX and newY of the top side's sphere
 		float rootAngle = 0, rootYRotation = 0;
 		float jointAngle = 180, jointYRotation = 0;
+		float handYRotation = 0;
 		const float upperArmLength = 5, botArmLength = 5;
 		Position pos;
 
@@ -258,6 +268,7 @@ namespace Robot
 				.pushMatrix()
 				.rotate(90, 1, 0, 0)
 				.translate(0, -5, 0) // cuz above alrd translate 6 d
+				.rotate(handYRotation, 0, pos == POSITION_RIGHT ? -1 : 1, 0)
 				.cuboid({ -0.25, 0, 0.5, primary }, { 0.25, 0, -0.5 }, { -0.25, -0.5, 0.75 }, { 0.25, -0.5, -0.75 })
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				.cuboid({ -0.25, -0.5, 0.75, primary }, { 0.25, -1.5, -0.75 }) // real palm
@@ -266,10 +277,12 @@ namespace Robot
 			// fingers
 			//Finger index({  });
 			// index finger -> pinky
+			// the set of animation vars that is using
+			GripAnimationVars gav = pos == POSITION_LEFT ? left : right;
 			for (int i = 0; i < 4; i++)
 			{
 				Finger f({ 0, -(1.5 + 0.125), -(0.75f - ((i+1) * 0.225f) - (i * 0.125f)) }, pos);
-				f.setAngle(fingerCurrentGripRootAngle, fingerCurrentGripJointAngle);
+				f.setAngle(gav.fingerCurrentGripRootAngle, gav.fingerCurrentGripJointAngle);
 				f.draw();
 			}
 
@@ -277,8 +290,21 @@ namespace Robot
 			Finger thumb({ 0, -0.75, 0.875 }, pos);
 			thumb.setLength(0.375, 0.375);
 			thumb.forceRotateX(pos == POSITION_RIGHT ? 90 : -90);
-			thumb.setAngle(thumbCurrentGripRootAngle, thumbCurrentGripJointAngle);
+			thumb.setAngle(gav.thumbCurrentGripRootAngle, gav.thumbCurrentGripJointAngle);
 			thumb.draw();
+
+			// will only be equipped on right hand
+			if (swordState == SWORD_EQUIPPED && pos == POSITION_RIGHT)
+			{
+				cv.pushMatrix();
+				cv
+					.translate(-0.25, -1.1, 0)
+					.rotate(90, 0, 0, 1)
+					.rotate(90, 1, 0, 0)
+					;
+				SoonChee::sword();
+				cv.popMatrix();
+			}
 
 			cv
 				.popMatrix()
@@ -346,61 +372,65 @@ namespace Robot
 		// tells the hand to start gripping
 		void grip(bool shouldGrip)
 		{
-			if (shouldGrip && !_isGripping)
+			// cuz need change value, need to use reference
+			GripAnimationVars& gav = pos == POSITION_LEFT ? left : right;
+			if (shouldGrip && !gav._isGripping)
 			{
 				if (!startGripping)
 				{
 					startGripping = true;
-					gripTweenProgress = 0;
+					gav.fingerGripTweenProgress = 0;
 					startUnGripping = false;
 				}
 				// rest angle for all the fingers are 0
-				fingerLastGripRootAngle = fingerCurrentGripRootAngle = tween(0, fingerGripRoot, gripTweenProgress += 0.01);
-				thumbLastGripRootAngle = thumbCurrentGripRootAngle = tween(0, thumbGripRoot, gripTweenProgress);
-				fingerLastGripJointAngle = fingerCurrentGripJointAngle = tween(0, fingerGripJoint, gripTweenProgress);
-				thumbLastGripJointAngle = thumbCurrentGripJointAngle = tween(0, thumbGripJoint, gripTweenProgress);
-				if (gripTweenProgress >= 1)
+				gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = tween(0, fingerGripRoot, gav.fingerGripTweenProgress += 0.01);
+				gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = tween(0, thumbGripRoot, gav.fingerGripTweenProgress);
+				gav.fingerLastGripJointAngle = gav.fingerCurrentGripJointAngle = tween(0, fingerGripJoint, gav.fingerGripTweenProgress);
+				gav.thumbLastGripJointAngle = gav.thumbCurrentGripJointAngle = tween(0, thumbGripJoint, gav.fingerGripTweenProgress);
+				if (gav.fingerGripTweenProgress >= 1)
 				{
-					_isGripping = true;
+					gav._isGripping = true;
 					startGripping = false;
-					gripTweenProgress = 0;
-					fingerLastGripRootAngle = fingerCurrentGripRootAngle = fingerGripRoot;
-					thumbLastGripRootAngle = thumbCurrentGripRootAngle = thumbGripRoot;
-					fingerLastGripJointAngle = fingerCurrentGripJointAngle = fingerGripJoint;
-					thumbLastGripJointAngle = thumbCurrentGripJointAngle = thumbGripJoint;
+					gav.fingerGripTweenProgress = 0;
+					gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = fingerGripRoot;
+					gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = thumbGripRoot;
+					gav.fingerLastGripJointAngle = gav.fingerCurrentGripJointAngle = fingerGripJoint;
+					gav.thumbLastGripJointAngle = gav.thumbCurrentGripJointAngle = thumbGripJoint;
 				}
 			}
-			else if (!shouldGrip && (_isGripping || fingerCurrentGripJointAngle != 0 || thumbCurrentGripJointAngle != 0 || fingerCurrentGripRootAngle != 0 || thumbCurrentGripJointAngle != 0))
+			else if (!shouldGrip && (gav._isGripping || gav.fingerCurrentGripJointAngle != 0 || gav.thumbCurrentGripJointAngle != 0 || gav.fingerCurrentGripRootAngle != 0 || gav.thumbCurrentGripJointAngle != 0))
 			{
 				if (!startUnGripping)
 				{
 					startUnGripping = true;
-					gripTweenProgress = 0;
+					gav.fingerGripTweenProgress = 0;
 					startGripping = false;
 				}
-				fingerCurrentGripRootAngle = tween(fingerLastGripRootAngle, 0, gripTweenProgress += 0.01);
-				thumbCurrentGripRootAngle = tween(thumbLastGripRootAngle, 0, gripTweenProgress);
-				fingerCurrentGripJointAngle = tween(fingerLastGripJointAngle, 0, gripTweenProgress);
-				thumbCurrentGripJointAngle = tween(thumbLastGripJointAngle, 0, gripTweenProgress);
-				if (gripTweenProgress >= 1)
+				gav.fingerCurrentGripRootAngle = tween(gav.fingerLastGripRootAngle, 0, gav.fingerGripTweenProgress += 0.01);
+				gav.thumbCurrentGripRootAngle = tween(gav.thumbLastGripRootAngle, 0, gav.fingerGripTweenProgress);
+				gav.fingerCurrentGripJointAngle = tween(gav.fingerLastGripJointAngle, 0, gav.fingerGripTweenProgress);
+				gav.thumbCurrentGripJointAngle = tween(gav.thumbLastGripJointAngle, 0, gav.fingerGripTweenProgress);
+				if (gav.fingerGripTweenProgress >= 1)
 				{
-					_isGripping = false;
+					gav._isGripping = false;
 					startGripping = false;
-					gripTweenProgress = 0;
-					fingerLastGripRootAngle = fingerCurrentGripRootAngle = thumbLastGripRootAngle = thumbCurrentGripRootAngle = fingerLastGripJointAngle = fingerCurrentGripJointAngle = thumbLastGripJointAngle = thumbCurrentGripJointAngle = 0;
+					gav.fingerGripTweenProgress = 0;
+					gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = gav.fingerLastGripJointAngle = gav.fingerCurrentGripJointAngle = gav.thumbLastGripJointAngle = gav.thumbCurrentGripJointAngle = 0;
 				}
 			}
 		}
 
 		bool isGripping()
 		{
-			return _isGripping;
+			GripAnimationVars gav = pos == POSITION_LEFT ? left : right;
+			return gav._isGripping;
 		}
 
-		void forceYRotation(float rootYRot, float jointYRot)
+		void forceYRotation(float rootYRot, float jointYRot, float handYRot)
 		{
 			rootYRotation = rootYRot;
 			jointYRotation = jointYRot;
+			handYRotation = handYRot;
 		}
 	};
 
@@ -592,8 +622,10 @@ namespace Robot
 
 	float leftHandRootRestYRotation = 0;
 	float leftHandJointRestYRotation = 0;
+	float leftHandPalmRestYRotation = 0;
 	float leftHandRootYRotation = leftHandRootRestYRotation;
 	float leftHandJointYRotation = leftHandJointRestYRotation;
+	float leftHandPalmYRotation = leftHandPalmRestYRotation;
 
 	Point3D leftHandRestTarget = { -5, -3, 0 };
 	Point3D leftHandWalkTargets[] = {
@@ -623,8 +655,10 @@ namespace Robot
 
 	float rightHandRootRestYRotation = 0;
 	float rightHandJointRestYRotation = 0;
+	float rightHandPalmRestYRotation = 0;
 	float rightHandRootYRotation = rightHandRootRestYRotation;
 	float rightHandJointYRotation = rightHandJointRestYRotation;
+	float rightHandPalmYRotation = rightHandPalmRestYRotation;
 
 	Point3D rightHandRestTarget = { 5, -3, 0 };
 	Point3D rightHandWalkTargets[] = {
@@ -650,6 +684,8 @@ namespace Robot
 		{ 5, -1.5, 1 },
 	};
 	Point3D rightHandCurrentTarget = rightHandRestTarget;
+	bool rightHandShouldGrip = true;
+	bool leftHandShouldGrip = false;
 
 	bool isWalking = false;
 	float walkingTweenProgress = 0;
@@ -659,9 +695,64 @@ namespace Robot
 	// debug purpose (test grip)
 	bool shouldGrip = false;
 
+	Transform shieldActiveState;
+	float shieldActiveRotateY = 0; // both shield should be same
+
+	// cuz cannot execute set value outside of a function
+	void initWeaponActiveStates()
+	{
+		shieldActiveState.rotAngle = 0;
+		shieldActiveState.transY = 0;
+		shieldActiveState.transZ = 7;
+		shieldActiveState.transX = 4;
+		shieldActiveState.scaleX = shieldActiveState.scaleY = shieldActiveState.scaleZ = 1;
+	}
+
+	Transform shieldRestState;
+	float shieldRestRotateY = 90; // both shield should be same
+
+	Transform shieldCurrentState = shieldRestState;
+	Transform shieldLastState;
+	float shieldCurrentRotateY = shieldRestRotateY;
+	float shieldLastRotateY = shieldCurrentRotateY;
+
+
+	bool setSwordEquip = true;
+	Transform swordUnequipFlyOutDest;
+	Transform swordUnequipAnim; // also used for idle states
+	Transform swordUnequipFlyInFrom;
+	float swordTween = 0;
+
+	// cuz cannot execute set value outside of a function
+	void initWeaponRestAndOriStates()
+	{
+		shieldCurrentState.rotAngle = shieldRestState.rotAngle = 45;
+		shieldCurrentState.transY = shieldRestState.transY = 1;
+		shieldCurrentState.transZ = shieldRestState.transZ = 14;
+		shieldCurrentState.transX = shieldRestState.transX = 0;
+		shieldCurrentState.scaleX = shieldRestState.scaleX = 0.5;
+		shieldCurrentState.scaleY = shieldCurrentState.scaleZ = shieldRestState.scaleY = shieldRestState.scaleZ = 0.75;
+
+		// sword states
+		swordUnequipFlyOutDest.transX = -20;
+		swordUnequipFlyOutDest.transY = 20;
+		swordUnequipFlyInFrom.transX = -8;
+		swordUnequipFlyInFrom.transY = 25;
+	}
+
+	bool setShieldActive = false;
+	bool shieldActivating = false;
+	bool shieldActivated = false;
+	float shieldActivateTweenProgress = 0;
+	float shieldUnactivateTweenProgress = 0;
+
+	Point3D swordReleaseHandTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 4, rightHandRestTarget.z + 5, { 255, 255, 255} };
+	float swordReleasePalmRotation = 30;
+
+	NowAnimating animating = NONE; // if is animating other stuff, cannot walk
 	void main()
 	{
-		if (isWalking)
+		if (isWalking && animating == WALK)
 		{
 			int walkAnimCount = sizeof(leftLegWalkTargets) / sizeof(leftLegWalkTargets[0]);
 
@@ -707,6 +798,7 @@ namespace Robot
 		if (!isWalking 
 			&& (leftLegCurrentTarget != leftLegRestTarget || rightLegCurrentTarget != rightLegRestTarget)
 			&& (leftHandCurrentTarget != leftHandRestTarget || rightHandCurrentTarget != rightHandRestTarget)
+			&& !(animating == WALK)
 			)
 		{
 			// tween back
@@ -729,12 +821,147 @@ namespace Robot
 				rightLegCurrentTarget = rightLegRestTarget;
 				leftHandCurrentTarget = leftHandRestTarget;
 				rightHandCurrentTarget = rightHandRestTarget;
+				animating = NONE;
+			}
+		}
+
+		if (setShieldActive && !shieldActivated)
+		{
+			if (!shieldActivating)
+			{
+				shieldActivateTweenProgress = 0;
+				shieldActivating = true;
+			}
+			shieldLastState.rotAngle = shieldCurrentState.rotAngle = tween(shieldRestState.rotAngle, shieldActiveState.rotAngle, shieldActivateTweenProgress += 0.01);
+			shieldLastState.transX = shieldCurrentState.transX = tween(shieldRestState.transX, shieldActiveState.transX, shieldActivateTweenProgress);
+			shieldLastState.transY = shieldCurrentState.transY = tween(shieldRestState.transY, shieldActiveState.transY, shieldActivateTweenProgress);
+			shieldLastState.transZ = shieldCurrentState.transZ = tween(shieldRestState.transZ, shieldActiveState.transZ, shieldActivateTweenProgress);
+			shieldCurrentState.scaleX = shieldLastState.scaleX = tween(shieldRestState.scaleX, shieldActiveState.scaleX, shieldActivateTweenProgress);
+			shieldCurrentState.scaleY = shieldCurrentState.scaleZ
+				= shieldLastState.scaleY = shieldLastState.scaleZ 
+				= tween(shieldRestState.scaleY, shieldActiveState.scaleY, shieldActivateTweenProgress); // luckily all side scale same
+			shieldLastRotateY = shieldCurrentRotateY = tween(shieldRestRotateY, shieldActiveRotateY, shieldActivateTweenProgress);
+
+			if (shieldActivateTweenProgress >= 1)
+			{
+				shieldActivated = true;
+				shieldActivating = false;
+				shieldActivateTweenProgress = 0;
+				shieldUnactivateTweenProgress = 0;
+				shieldLastState = shieldCurrentState = shieldActiveState;
+				shieldLastRotateY = shieldCurrentRotateY = shieldActiveRotateY;
+				animating = NONE;
+			}
+		}
+		if (!setShieldActive && (shieldActivated || shieldCurrentState != shieldRestState || shieldCurrentRotateY != shieldRestRotateY))
+		{
+			if (shieldActivating)
+			{
+				shieldActivateTweenProgress = 0;
+				shieldUnactivateTweenProgress = 0;
+				shieldActivating = false;
+			}
+			shieldCurrentState.rotAngle = tween(shieldLastState.rotAngle, shieldRestState.rotAngle, shieldUnactivateTweenProgress += 0.01);
+			shieldCurrentState.transX = tween(shieldLastState.transX, shieldRestState.transX, shieldUnactivateTweenProgress);
+			shieldCurrentState.transY = tween(shieldLastState.transY, shieldRestState.transY, shieldUnactivateTweenProgress);
+			shieldCurrentState.transZ = tween(shieldLastState.transZ, shieldRestState.transZ, shieldUnactivateTweenProgress);
+			shieldCurrentState.scaleX = tween(shieldLastState.scaleX, shieldRestState.scaleX, shieldUnactivateTweenProgress); 
+			shieldCurrentState.scaleY = shieldCurrentState.scaleZ
+				= tween(shieldLastState.scaleY, shieldRestState.scaleY, shieldUnactivateTweenProgress); // luckily all side scale same
+			shieldCurrentRotateY = tween(shieldLastRotateY, shieldRestRotateY, shieldUnactivateTweenProgress);
+
+			if (shieldUnactivateTweenProgress >= 1)
+			{
+				shieldActivated = false;
+				shieldActivateTweenProgress = 0;
+				shieldUnactivateTweenProgress = 0;
+				shieldLastState = shieldCurrentState = shieldRestState;
+				shieldLastRotateY = shieldCurrentRotateY = shieldRestRotateY;
+				animating = NONE;
 			}
 		}
 
 		cv.pushMatrix().translate(0, 10, 0);
 		Head();
 		cv.popMatrix();
+
+		// create the hands, but don't draw yet cuz transform matrix diff
+		Hand rightHand({ 5, 8, 0 });
+		Hand leftHand({ -5, 8, 0 }, POSITION_LEFT);
+
+		// unequipping a sword
+		if (!setSwordEquip)
+		{
+			if (swordState == SWORD_EQUIPPED)
+			{
+				if (swordTween >= 1 && rightHand.isGripping())
+				{
+					swordTween = 1;
+					rightHandCurrentTarget = swordReleaseHandTarget;
+					// once reach, then start ungrip
+					// call for ungrip
+					rightHandShouldGrip = false;
+				}
+				// once right hand target at position and ungrip finish
+				else if (swordTween >= 1 && !rightHand.isGripping())
+				{
+					swordTween = 0;
+					swordState = SWORD_UNEQUIP_FLYOUT;
+				}
+				else 
+				{
+					// shud be in rest position for right hand when want unequip
+					rightHandCurrentTarget = tween(rightHandRestTarget, swordReleaseHandTarget, swordTween);
+					rightHandPalmYRotation = tween(rightHandPalmRestYRotation, swordReleasePalmRotation, swordTween);
+					swordTween += 0.05;
+				}
+			}
+			if (swordState == SWORD_UNEQUIP_FLYOUT)
+			{
+				swordUnequipAnim.transX = tween(0, swordUnequipFlyOutDest.transX, swordTween += 0.005);
+				swordUnequipAnim.transY = tween(0, swordUnequipFlyOutDest.transY, swordTween);
+				swordUnequipAnim.transZ = tween(0, swordUnequipFlyOutDest.transZ, swordTween);
+				if (swordTween >= 1)
+				{
+					swordTween = 0;
+					swordUnequipAnim.transX = swordUnequipFlyOutDest.transX;
+					swordUnequipAnim.transY = swordUnequipFlyOutDest.transY;
+					swordUnequipAnim.transZ = swordUnequipFlyOutDest.transZ;
+					swordState = SWORD_UNEQUIP_FLYIN;
+				}	
+			}
+			if (swordState == SWORD_UNEQUIP_FLYIN)
+			{
+				swordUnequipAnim.transX = tween(swordUnequipFlyInFrom.transX, 0, swordTween += 0.005);
+				swordUnequipAnim.transY = tween(swordUnequipFlyInFrom.transY, 0, swordTween);
+				swordUnequipAnim.transZ = tween(swordUnequipFlyInFrom.transZ, 0, swordTween);
+				if (swordTween >= 1)
+				{
+					swordTween = 0;
+					swordUnequipAnim.transX = 0;
+					swordUnequipAnim.transY = 0;
+					swordUnequipAnim.transZ = 0;
+					swordState = SWORD_UNEQUIP_IDLE;
+					// finish whole sequence d
+					animating = NONE;
+				}
+			}
+		}
+		if (swordState == SWORD_UNEQUIP_FLYOUT)
+		{
+			// when hand gripping wan release back
+			cv
+				.pushMatrix()
+				.translate(swordUnequipAnim.transX, swordUnequipAnim.transY, swordUnequipAnim.transZ) // when animate change this
+				.translate(4.75, 0, 0)
+				.rotate(23, 1, 0, 0)
+				.translate(0, 2, 6)
+				.rotate(90, 0, 1, 0)
+				.rotate(30, -1, 0, 0)
+				;
+			SoonChee::sword();
+			cv.popMatrix();
+		}
 
 		cv
 			.pushMatrix() // upper body rotate when walking
@@ -774,6 +1001,20 @@ namespace Robot
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			;
 
+		// sword by default float behind body
+		if (swordState == SWORD_UNEQUIP_FLYIN || swordState == SWORD_UNEQUIP_IDLE)
+		{
+			cv
+				.pushMatrix()
+				.translate(swordUnequipAnim.transX, swordUnequipAnim.transY, swordUnequipAnim.transZ) // when animate change this
+				.rotate(15, 0, 0, 1)
+				.translate(0, 9, -4)
+				.rotate(180, 0, 0, 1)
+				;
+			SoonChee::sword();
+			cv.popMatrix();
+		}
+
 		// arm joint to body
 		// right
 		cv
@@ -794,16 +1035,41 @@ namespace Robot
 			.popMatrix()
 			;
 
-		Hand rightHand({ 5, 8, 0 });
+		// duli eh float above hand, flw body orientation
+		// right shield
+		cv.pushMatrix();
+		cv.rotate(shieldCurrentState.rotAngle, 0, 0, 1);
+		cv.rotate(shieldCurrentRotateY, 0, 1, 0);
+		cv.translate(shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
+		cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
+
+		SoonChee::shield();
+
+		cv.popMatrix();
+
+		// left shield
+		cv.pushMatrix();
+		cv.rotate(shieldCurrentState.rotAngle, 0, 0, -1);
+		cv.rotate(shieldCurrentRotateY, 0, -1, 0);
+		cv.translate(-shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
+		cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
+
+		SoonChee::shield();
+
+		cv.popMatrix();
+
+		// solve the transformations and draw
 		rightHand.solveIK(rightHandCurrentTarget);
-		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation);
-		rightHand.grip(shouldGrip);
+		//rightHand.solveIK(swordReleasePosition);
+		//cv.pointSize(20).point(swordReleaseHandTarget);
+		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation, rightHandPalmYRotation);
+		//rightHand.forceYRotation(debugRootY, debugJointY);
+		rightHand.grip(rightHandShouldGrip);
 		rightHand.draw();
 
-		Hand leftHand({ -5, 8, 0 }, POSITION_LEFT);
 		leftHand.solveIK(leftHandCurrentTarget);
-		leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation);
-		leftHand.grip(shouldGrip);
+		leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation, leftHandPalmYRotation);
+		leftHand.grip(leftHandShouldGrip);
 		leftHand.draw();
 
 		cv.popMatrix();
@@ -845,10 +1111,37 @@ namespace Robot
 		switch (key)
 		{
 		case 'W': 
+			if (animating != NONE && animating != WALK)
+				break;
+			animating = WALK;
 			isWalking = true;
 			break;
 		case 'G':
 			shouldGrip = !shouldGrip;
+			break;
+		case 'D': // defense
+			if (animating != NONE && animating != SHIELD) // shudnt hold
+				break;
+			animating = SHIELD;
+			setShieldActive = !setShieldActive;
+			break;
+		case 'S':
+			if (animating != NONE) // only finish equip/unequipn ka can execute again
+				break;
+			animating = SWORD_EQUIP_UNEQUIP;
+			setSwordEquip = !setSwordEquip;
+			break;
+		case 'I':
+			swordReleaseHandTarget.y += 0.5;
+			break;
+		case 'K':
+			swordReleaseHandTarget.y -= 0.5;
+			break;
+		case 'J':
+			swordReleaseHandTarget.z += 0.5;
+			break;
+		case 'L':
+			swordReleaseHandTarget.z -= 0.5;
 			break;
 		}
 	}
