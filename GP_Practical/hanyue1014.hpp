@@ -850,7 +850,7 @@ namespace Robot
 				shieldUnactivateTweenProgress = 0;
 				shieldLastState = shieldCurrentState = shieldActiveState;
 				shieldLastRotateY = shieldCurrentRotateY = shieldActiveRotateY;
-				animating = NONE;
+				// ehh? why no set animating back to none??? cuz when shield is activated, ntg else should be able to run
 			}
 		}
 		if (!setShieldActive && (shieldActivated || shieldCurrentState != shieldRestState || shieldCurrentRotateY != shieldRestRotateY))
@@ -889,6 +889,71 @@ namespace Robot
 		Hand rightHand({ 5, 8, 0 });
 		Hand leftHand({ -5, 8, 0 }, POSITION_LEFT);
 
+		// equipping a sword
+		if (setSwordEquip)
+		{
+			if (swordState == SWORD_UNEQUIP_IDLE)
+			{
+				// ntg special, proceed to next state
+				swordState = SWORD_EQUIP_FLYOUT;
+			}
+			if (swordState == SWORD_EQUIP_FLYOUT)
+			{
+				// sword flyout from idle position to the "flyin" position
+				// when fly out eh time hand can be ready to fetch the sword d
+				swordUnequipAnim.transX = tween(0, swordUnequipFlyInFrom.transX, swordTween += 0.005);
+				swordUnequipAnim.transY = tween(0, swordUnequipFlyInFrom.transY, swordTween);
+				swordUnequipAnim.transZ = tween(0, swordUnequipFlyInFrom.transZ, swordTween);
+
+				rightHandCurrentTarget = tween(rightHandRestTarget, swordReleaseHandTarget, swordTween); 
+				rightHandPalmYRotation = tween(rightHandPalmRestYRotation, swordReleasePalmRotation, swordTween);
+				if (swordTween >= 1)
+				{
+					swordTween = 0;
+					swordUnequipAnim.transX = swordUnequipFlyInFrom.transX;
+					swordUnequipAnim.transY = swordUnequipFlyInFrom.transY;
+					swordUnequipAnim.transZ = swordUnequipFlyInFrom.transZ;
+
+					rightHandCurrentTarget = swordReleaseHandTarget;
+					rightHandPalmYRotation = swordReleasePalmRotation;
+					swordState = SWORD_EQUIP_FLYIN;
+				}
+			}
+			if (swordState == SWORD_EQUIP_FLYIN)
+			{
+				swordUnequipAnim.transX = tween(swordUnequipFlyOutDest.transX, 0, swordTween += 0.005);
+				swordUnequipAnim.transY = tween(swordUnequipFlyOutDest.transY, 0, swordTween);
+				swordUnequipAnim.transZ = tween(swordUnequipFlyOutDest.transZ, 0, swordTween);
+
+				if (swordTween >= 1)
+				{
+					swordTween = 0;
+					swordUnequipAnim.transX = swordUnequipAnim.transY = swordUnequipAnim.transZ = 0;
+					// go to next state
+					swordState = SWORD_EQUIPPED;
+				}
+			}
+			if (swordState == SWORD_EQUIPPED)
+			{
+				// grip the sword then move back to rest position
+				if (!rightHand.isGripping())
+				{
+					rightHandShouldGrip = true;
+				}
+				else if (rightHand.isGripping() && (rightHandCurrentTarget != rightHandRestTarget || rightHandPalmYRotation != rightHandPalmRestYRotation)) // if finally gripped then can move back to rest position
+				{
+					rightHandCurrentTarget = tween(swordReleaseHandTarget, rightHandRestTarget, swordTween += 0.005); 
+					rightHandPalmYRotation = tween(swordReleasePalmRotation, rightHandPalmRestYRotation, swordTween);
+					if (swordTween >= 1)
+					{
+						swordTween = 0;
+						rightHandCurrentTarget = rightHandRestTarget;
+						rightHandPalmYRotation = rightHandPalmRestYRotation;
+						animating = NONE; // officially finished
+					}
+				}
+			}
+		}
 		// unequipping a sword
 		if (!setSwordEquip)
 		{
@@ -898,6 +963,7 @@ namespace Robot
 				{
 					swordTween = 1;
 					rightHandCurrentTarget = swordReleaseHandTarget;
+					rightHandPalmYRotation = swordReleasePalmRotation;
 					// once reach, then start ungrip
 					// call for ungrip
 					rightHandShouldGrip = false;
@@ -913,7 +979,7 @@ namespace Robot
 					// shud be in rest position for right hand when want unequip
 					rightHandCurrentTarget = tween(rightHandRestTarget, swordReleaseHandTarget, swordTween);
 					rightHandPalmYRotation = tween(rightHandPalmRestYRotation, swordReleasePalmRotation, swordTween);
-					swordTween += 0.05;
+					swordTween += 0.005;
 				}
 			}
 			if (swordState == SWORD_UNEQUIP_FLYOUT)
@@ -921,12 +987,18 @@ namespace Robot
 				swordUnequipAnim.transX = tween(0, swordUnequipFlyOutDest.transX, swordTween += 0.005);
 				swordUnequipAnim.transY = tween(0, swordUnequipFlyOutDest.transY, swordTween);
 				swordUnequipAnim.transZ = tween(0, swordUnequipFlyOutDest.transZ, swordTween);
+				// when flying out the hand can return to ori rest position d
+				rightHandCurrentTarget = tween(swordReleaseHandTarget, rightHandRestTarget, swordTween); 
+				rightHandPalmYRotation = tween(swordReleasePalmRotation, rightHandPalmRestYRotation, swordTween);
 				if (swordTween >= 1)
 				{
 					swordTween = 0;
 					swordUnequipAnim.transX = swordUnequipFlyOutDest.transX;
 					swordUnequipAnim.transY = swordUnequipFlyOutDest.transY;
 					swordUnequipAnim.transZ = swordUnequipFlyOutDest.transZ;
+
+					rightHandCurrentTarget = rightHandRestTarget;
+					rightHandPalmYRotation = rightHandPalmRestYRotation;
 					swordState = SWORD_UNEQUIP_FLYIN;
 				}	
 			}
@@ -947,7 +1019,9 @@ namespace Robot
 				}
 			}
 		}
-		if (swordState == SWORD_UNEQUIP_FLYOUT)
+
+		// when equipping flying in, also need to show this
+		if (swordState == SWORD_UNEQUIP_FLYOUT || swordState == SWORD_EQUIP_FLYIN)
 		{
 			// when hand gripping wan release back
 			cv
@@ -1001,8 +1075,8 @@ namespace Robot
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			;
 
-		// sword by default float behind body
-		if (swordState == SWORD_UNEQUIP_FLYIN || swordState == SWORD_UNEQUIP_IDLE)
+		// sword by default float behind body, when fly out to become equipped also need show
+		if (swordState == SWORD_UNEQUIP_FLYIN || swordState == SWORD_UNEQUIP_IDLE || swordState == SWORD_EQUIP_FLYOUT)
 		{
 			cv
 				.pushMatrix()
