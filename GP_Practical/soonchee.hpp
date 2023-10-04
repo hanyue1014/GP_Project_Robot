@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Windows.h>
 #include <gl/GL.h>
 #include <gl/GLU.h>
@@ -26,9 +28,9 @@ namespace SoonChee
 		glEnd();
 	}
 
-	void drawRect(float width, float length)
+	void drawRect(float width, float length, GLenum mode)
 	{
-		glBegin(GL_LINE_LOOP);
+		glBegin(mode);
 		//bottom face 1
 		glColor3f(1.0, 1.0, 1.0); //red
 		glVertex3f(0.0, 0.0, length);
@@ -334,10 +336,11 @@ namespace SoonChee
 	//--------------------------------
 	//	OpenGL drawing
 	//--------------------------------
-		glEnable(GL_DEPTH_TEST);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//glPushMatrix();
-		glRotatef(0.2, 0, 1, 0);
+		//glEnable(GL_DEPTH_TEST);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glPushMatrix();
+		glTranslatef(-0.082, 0.3, 0);
+		//glRotatef(0.2, 0, 1, 0);
 
 
 		//sword head
@@ -349,7 +352,7 @@ namespace SoonChee
 		//sword body
 		glPushMatrix();
 		glTranslatef(0, -0.06, 0);
-		drawRect(0.17, 0.02);
+		drawRect(0.17, 0.02, GL_LINE_LOOP);
 		glPopMatrix();
 
 		//sword center
@@ -466,17 +469,17 @@ namespace SoonChee
 		glTranslatef(0.08, -0.37, 0.008);
 		drawSphereWithoutGLU(0.03);
 		glPopMatrix();
-		//glPopMatrix();
+		glPopMatrix();
 	}
 
 	void shield()
 	{
 		glPushMatrix();
-		glTranslatef(-0.5, -0.5, 0);
+		glTranslatef(-0.2, -0.4, 0);
 		glColor3f(1, 0.5, 0.5);
-		drawShield(0.5, 0.1);
+		drawShield(0.4, 0.05);
 		glColor3f(1, 1, 1);
-		drawShieldLine(0.4, 0.1);
+		drawShieldLine(0.4, 0.05);
 		glPopMatrix();
 	}
 
