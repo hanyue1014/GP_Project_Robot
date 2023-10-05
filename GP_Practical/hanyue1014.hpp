@@ -20,8 +20,11 @@ namespace Robot
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
 	Color primary = { 218, 219, 214 };
-	Color lineC = { 39, 37, 35 };
-	Color secondary = { 0, 255, 0 };
+	Color lineOrJoint = { 80, 87, 132 };
+	Color eyeC = { 39, 37, 55 };
+	Color secondary = { 3, 210, 255 };
+	Color accent = { 0, 255, 0 };
+	Color outline = { 0, 0, 0 };
 
 	void Head()
 	{
@@ -30,18 +33,18 @@ namespace Robot
 			.pushMatrix()
 			.rotate(90, 0, 0, 1)
 			.cuboid({ -0.3, 1.25, 0.2, primary }, { 0.7, 1.25, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			// "eyes"
 			.pushMatrix()
 			.translate(0, 0, 0.601)
 			.pushMatrix() // top one
 			.rotate(30, 0, 0, -1)
-			.rect({ -0.1, 0.65, lineC }, { 0.1, 0.25 })
+			.rect({ -0.1, 0.65, eyeC }, { 0.1, 0.25 })
 			.popMatrix() // top one
 			.rotate(30, 0, 0, 1)
-			.rect({ -0.1, 0.65, lineC }, { 0.1, 0.25 })
+			.rect({ -0.1, 0.65, eyeC }, { 0.1, 0.25 })
 			.popMatrix()
 			.popMatrix()
 			// right half
@@ -49,26 +52,26 @@ namespace Robot
 			.rotate(180, 0, 1, 0)
 			.rotate(90, 0, 0, 1)
 			.cuboid({ -0.3, 1.25, 0.2, primary }, { 0.7, 1.25, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			// "eyes"
 			.pushMatrix()
 			.translate(0, 0, -0.601)
 			.pushMatrix() // top one
 			.rotate(30, 0, 0, -1)
-			.rect({ -0.1, 0.65, lineC }, { 0.1, 0.25 })
+			.rect({ -0.1, 0.65, eyeC }, { 0.1, 0.25 })
 			.popMatrix() // top one
 			.rotate(30, 0, 0, 1)
-			.rect({ -0.1, 0.65, lineC }, { 0.1, 0.25 })
+			.rect({ -0.1, 0.65, eyeC }, { 0.1, 0.25 })
 			.popMatrix()
 			.popMatrix()
 			// chin
 			.pyramid({ -0.75, -1, 0.6, primary }, { 0.75, -1, -0.6 }, { 0, -1.4, 0.25 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			// tianlinggai
 			.pyramid({ -0.75, 1, 0.6, primary }, { 0.75, 1, -0.6 }, { 0, 1.2, 0 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			;
 	}
 
@@ -180,7 +183,7 @@ namespace Robot
 				// basic skeleton
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1) // root bola
 				.cuboid({ -1, 1, 1, {255, 255, 0} }, { 1, -1, (0 + upperArmLength) }) // 0 cuz wanna factor in the bola
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				;
 
 			cv.reflect(REFLECT_Y, pos == POSITION_LEFT);
@@ -189,36 +192,36 @@ namespace Robot
 				.pushMatrix()
 				.rotate(90, -1, 0, 0)
 				.cuboid({ -1, 1, 1.3, primary }, { 0.3, -1, 1.1 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.cuboid({ 0.3, 1, 1.3, primary }, { 1.2, 1, 1.1 }, { 0.3, 0.1, 1.3 }, { 0.6, 0.1, 1.1 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.cuboid({ -1, 1.2, 1.3, primary }, { 1.2, 1, -1.3 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.cuboid({ -1, 1, -1.3, primary }, { 0.3, -1, -1.1 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.cuboid({ 0.3, 1, -1.3, primary }, { 1.2, 1, -1.1 }, { 0.3, 0.1, -1.3 }, { 0.6, 0.1, -1.1 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.cuboid({ 1.4, 2, 1.3, primary }, { 2, 2, -1.3 }, { 0.3, 1.2, 1.3 }, { 1.4, 1.2, -1.3 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				;
 			// styles for upper arm
 			cv
 				.cuboid({ -0.5, 1.5, upperArmLength - 1, primary }, { 0.5, 1.5, 2 }, { -1, 1, upperArmLength }, { 1, 1, 1 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.pushMatrix()
 				.rotate(90, 0, 0, 1)
 				.cuboid({ -0.5, 1.5, upperArmLength - 1, primary }, { 0.5, 1.5, 2 }, { -1, 1, upperArmLength }, { 1, 1, 1 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.pushMatrix()
 				.rotate(180, 0, 0, 1)
 				.cuboid({ -0.5, 1.5, upperArmLength - 1, primary }, { 0.5, 1.5, 2 }, { -1, 1, upperArmLength }, { 1, 1, 1 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.pushMatrix()
 				.rotate(90, 0, 0, 1)
 				.cuboid({ -0.5, 1.5, upperArmLength - 1, primary }, { 0.5, 1.5, 2 }, { -1, 1, upperArmLength }, { 1, 1, 1 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.popMatrix()
 				;
@@ -230,26 +233,26 @@ namespace Robot
 				.rotate(jointAngle, 1, 0, 0) // elbow bola
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
 				.cuboid({ -1, 1, -1, {255, 255, 0} }, { 1, -1, -(0 + botArmLength) }) // 0 cuz wanna factor in the bola as well
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				;
 
 			// lower arm styles
 			cv
 				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.pushMatrix()
 				.rotate(90, 0, 0, 1)
 				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.pushMatrix()
 				.rotate(180, 0, 0, 1)
 				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.pushMatrix()
 				.rotate(90, 0, 0, 1)
 				.cuboid({ -0.5, 1.5, -2, primary }, { 0.5, 1.5, -(botArmLength - 1) }, { -1, 1, -1 }, { 1, 1, -botArmLength })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.popMatrix()
 				;
@@ -262,16 +265,16 @@ namespace Robot
 				.pushMatrix()
 				.rotate(90, 0, 0, pos == POSITION_LEFT ? 1 : -1)
 				.cuboid({ -0.5, 1.5, -(botArmLength - 1), primary }, { 0.5, 1.5, -1 }, { -0.75, 2.5, -(botArmLength - 3) }, { 0.75, 2.5, botArmLength - 2 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.pushMatrix()
 				.rotate(27.5, 0, 0, 1)
-				.cuboid({ 0, 1.5, -(botArmLength - 1), secondary }, { 0.5, 1.5, -1 }, { -0.75, 2.5, -(botArmLength - 3) }, { 0.5, 2.5, botArmLength - 2 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ 0, 1.5, -(botArmLength - 1), accent }, { 0.5, 1.5, -1 }, { -0.75, 2.5, -(botArmLength - 3) }, { 0.5, 2.5, botArmLength - 2 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.pushMatrix()
 				.rotate(-27.5, 0, 0, 1)
-				.cuboid({ -0.5, 1.5, -(botArmLength - 1), secondary }, { 0, 1.5, -1 }, { -0.75, 2.5, -(botArmLength - 3) }, { 0.5, 2.5, botArmLength - 2 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.cuboid({ -0.5, 1.5, -(botArmLength - 1), accent }, { 0, 1.5, -1 }, { -0.75, 2.5, -(botArmLength - 3) }, { 0.5, 2.5, botArmLength - 2 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.popMatrix()
 				;
@@ -284,7 +287,7 @@ namespace Robot
 				.rotate(handZRotation, 0, 0, pos == POSITION_RIGHT ? 1 : -1)
 				.rotate(handYRotation, 0, pos == POSITION_RIGHT ? -1 : 1, 0)
 				.cuboid({ -0.25, 0, 0.5, primary }, { 0.25, 0, -0.5 }, { -0.25, -0.5, 0.75 }, { 0.25, -0.5, -0.75 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.cuboid({ -0.25, -0.5, 0.75, primary }, { 0.25, -1.5, -0.75 }) // real palm
 				;
 
@@ -472,18 +475,18 @@ namespace Robot
 				.rotate(rootAngle, -1, 0, 0)
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
 				.cuboid({ -1, 1, -1, {255, 255, 0} }, { 1, -1, -5 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				;
 
 			// upper leg style
 			cv
 				.cuboid({ -0.75, -1.3, 1.5, primary }, { 0.75, -1.5, -6 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.cuboid({ 0.75, -1.5, 1.5, primary }, { 0.75, -1.3, -6 }, { 1.5, -1, 1 }, { 1.5, -0.75, -5 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.reflect(REFLECT_Y, true) // direct use reflect, lazy  rewrite d
 				.replotPrevBlocky3D(GL_QUADS, primary)
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.reflect()
 				;
 
@@ -491,16 +494,16 @@ namespace Robot
 			// side way and back no need got "floating shield"
 			cv
 				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.pushMatrix()
 				.rotate(90, 0, 0, 1)
 				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.pushMatrix()
 				.rotate(180, 0, 0, 1)
 				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				;
 
@@ -511,32 +514,102 @@ namespace Robot
 				.rotate(jointAngle, -1, 0, 0)
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 1)
 				.cuboid({ -1, 1, 1, {255, 255, 0} }, { 1, -1, 5 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				;
 
 			cv
 				.pushMatrix()
 				.rotate(180, 1, 0, 0)
 				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.pushMatrix()
 				.rotate(90, 0, 0, 1)
 				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.pushMatrix()
 				.rotate(270, 0, 0, 1)
 				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.pushMatrix()
 				.rotate(180, 0, 0, 1)
 				.cuboid({ 1, 1, -1, primary }, { 1, -1, -5 }, { 1.25, 0.5, -1.25 }, { 1.25, -0.5, -4.25 })
-				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				.popMatrix()
 				;
 
+			// leg (or shoe)
+			cv
+				.pushMatrix()
+				.translate(0, 0, 6)
+				.pushMatrix()
+				.rotate(90, 0, 1, 0)
+				.translate(0, 0, -1)
+				.cylinder({ 0, 0, 0, lineOrJoint }, 1, 1, 2, true)
+				.cylinder({ 0, 0, 0, outline }, 1, 1, 2, false, GLU_LINE, 20, 5)
+				.pushMatrix() // le cross with center empty front
+				.translate(0, 0, 2.1)
+				.rect({ -0.1, 0.8, secondary }, { 0.1, 0.2 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.rect({ -0.1, 0.8, secondary }, { 0.1, 0.2 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(180, 0, 0, 1)
+				.rect({ -0.1, 0.8, secondary }, { 0.1, 0.2 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(270, 0, 0, 1)
+				.rect({ -0.1, 0.8, secondary }, { 0.1, 0.2 })
+				.popMatrix()
+				.popMatrix() // le cross with center empty front
+				.pushMatrix() // le cross with center empty back
+				.translate(0, 0, -0.1)
+				.rect({ -0.1, 0.8, secondary }, { 0.1, 0.2 })
+				.pushMatrix()
+				.rotate(90, 0, 0, 1)
+				.rect({ -0.1, 0.8, secondary }, { 0.1, 0.2 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(180, 0, 0, 1)
+				.rect({ -0.1, 0.8, secondary }, { 0.1, 0.2 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(270, 0, 0, 1)
+				.rect({ -0.1, 0.8, secondary }, { 0.1, 0.2 })
+				.popMatrix()
+				.popMatrix() // le cross with center empty back
+				.popMatrix()
+				.pushMatrix()
+				.rotate(45, -1, 0, 0)
+				.cuboid({ -1, 1, 4, primary }, { 1, 1, 1 }, { -1, -1, 2 }, { 1, -1, 1 })
+				.pushMatrix()
+				.translate(0, 1.1, 2.5)
+				.rotate(90, 1, 0, 0)
+				.circle({ 0, 0, secondary }, 0.75)
+				.popMatrix()
+				.pushMatrix()
+				.translate(0, 1.15, 2.5)
+				.rotate(90, 1, 0, 0)
+				.circle({ 0, 0, primary }, 0.5)
+				.popMatrix()
+				.popMatrix()
+				.cuboid({ -1, 3.5215, 2, lineOrJoint }, { 1, 0.7, 3 })
+				.cuboid({ -1, 1, 1, primary }, { 1, -1, 2 })
+				.cuboid({ -1, -1, -1, lineOrJoint }, { 1, -2, 3 })
+				.cuboid({ -1, -2, -1, primary }, { 1, -2, 1 }, { -1, -4, -4 }, { 1, -4, -4 })
+				.pushMatrix()
+				.rotate(20, 0, 0, 1)
+				.cuboid({ -1, -2, -1, accent }, { 0.5, -2, 1 }, { -1, -4, -4 }, { 0.5, -4, -4 })
+				.popMatrix()
+				.pushMatrix()
+				.rotate(20, 0, 0, -1)
+				.cuboid({ -0.5, -2, -1, accent }, { 1, -2, 1 }, { -0.5, -4, -4 }, { 1, -4, -4 })
+				.popMatrix()
+				.popMatrix()
+				;
 			cv
 				.popMatrix() // knee
 				;
@@ -1127,35 +1200,35 @@ namespace Robot
 		// upper body
 		cv
 			.cuboid(
-				{ -1.5, 3, 1.5, {255, 0, 0} },
+				{ -1.5, 3, 1.5, primary },
 				{ 1.5, 3, -1.5 },
 				{ -0.5, 2, 0.5 },
 				{ 0.5, 2, -0.5 }
 			)
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.cuboid(
-				{ -2.5, 4, 2, {255, 0, 0} },
+				{ -2.5, 4, 2, primary },
 				{ 2.5, 4, -2 },
 				{ -1.5, 3, 1.5 },
 				{ 1.5, 3, -1.5 }
 			)
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
-			.cuboid({ -2.5, 6, 2, {255, 0, 0} }, { 2.5, 4, -2 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
+			.cuboid({ -2.5, 6, 2, primary }, { 2.5, 4, -2 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.cuboid(
-				{ -2, 7, 1.5, {255, 0, 0} },
+				{ -2, 7, 1.5, primary },
 				{ 2, 7, -1.5 },
 				{ -2.5, 6, 2 },
 				{ 2.5, 6, -2 }
 			)
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.cuboid(
-				{ -1, 8, 1, {255, 0, 0} },
+				{ -1, 8, 1, primary },
 				{ 1, 8, -1 },
 				{ -2, 7, 1.5 },
 				{ 2, 7, -1.5 }
 			)
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			;
 
 		// sword by default float behind body, when fly out to become equipped also need show
@@ -1496,7 +1569,7 @@ namespace Robot
 			.pushMatrix()
 			.translate(2, 7, 0)
 			.rotate(20, 0, 0, 1)
-			.cuboid({ -0.5, 0.5, 0.5, {0, 255, 255} }, { 3.5, -0.5, -0.5 })
+			.cuboid({ -0.5, 0.5, 0.5, lineOrJoint }, { 3.5, -0.5, -0.5 })
 			.popMatrix()
 			;
 
@@ -1506,7 +1579,7 @@ namespace Robot
 			.rotate(180, 0, 1, 0)
 			.translate(2, 7, 0)
 			.rotate(20, 0, 0, 1)
-			.cuboid({ -0.5, 0.5, 0.5, {0, 255, 255} }, { 3.5, -0.5, -0.5 })
+			.cuboid({ -0.5, 0.5, 0.5, lineOrJoint }, { 3.5, -0.5, -0.5 })
 			.popMatrix()
 			;
 
@@ -1566,27 +1639,41 @@ namespace Robot
 		cv.popMatrix();
 
 		cv
-			.cube({ 0, 1.5, 0, {255, 255, 0} }, 0.5) // upper body join lower body eh part
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.cube({ 0, 1.5, 0, lineOrJoint }, 0.5) // upper body join lower body eh part
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			;
 		// lower body
 		cv
-			.cuboid({ -1, -1, 1, {0, 0, 255} }, { 1, -1, -1 }, { -0.5, -2, 0.5 }, { 0.5, -2, -0.5 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			.cuboid(
-				{ -1.5, 0, 1.5, {0, 255, 255} },
-				{ 1.5, 0, -1.5 },
-				{ -1, -1, 1 },
-				{ 1, -1, -1 }
-			)
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
-			.cuboid(
-				{ -0.5, 1, 0.5, {0, 255, 255} },
+				{ -0.5, 1, 0.5, primary },
 				{ 0.5, 1, -0.5 },
 				{ -1.5, 0, 1.5 },
 				{ 1.5, 0, -1.5 }
 			)
-			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
+			.cuboid(
+				{ -1.5, 0, 1.5, primary },
+				{ 1.5, 0, -1.5 },
+				{ -1, -1, 1 },
+				{ 1, -1, -1 }
+			)
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
+			.cuboid({ -1, -1, 1, primary }, { 1, -1, -1 }, { -0.5, -2, 0.5 }, { 0.5, -2, -0.5 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
+			.cuboid(
+				{ -0.5, -2, 0.5, primary },
+				{ 0.5, -3, -0.5 }
+			)
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
+			.cylinder({ 0, -2.5, -0.6, lineOrJoint }, 0.375, 0.375, 1.2, true)
+			.cylinder({ 0, -2.5, -0.625, secondary }, 0.25, 0.25, 1.25, true)
+			.cuboid(
+				{ -0.5, -3, 0.5, lineOrJoint },
+				{ 0.5, -3, -0.5 },
+				{ -0.5, -4, 0.7 },
+				{ 0.5, -4, -0.3 }
+			)
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			;
 
 		Leg leftLeg({ 2, -2, 0 });
