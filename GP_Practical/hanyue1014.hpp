@@ -10,7 +10,9 @@ namespace Robot
 	// for hand and leg use, define position so place wont weird weird eh
 	enum Position { POSITION_LEFT, POSITION_RIGHT };
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
-	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, NONE };
+	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR }; 
+	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
+	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ANIMATING_NONE };
 
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
@@ -131,6 +133,9 @@ namespace Robot
 		float fingerLastGripJointAngle = 0, fingerCurrentGripJointAngle = 0;
 		float thumbLastGripRootAngle = 0, thumbCurrentGripRootAngle = 0;
 		float thumbLastGripJointAngle = 0, thumbCurrentGripJointAngle = 0;
+		// to keep track whether gripping is animating in progress
+		bool startGripping = false;
+		bool startUnGripping = false;
 	};
 	GripAnimationVars left;
 	GripAnimationVars right;
@@ -138,10 +143,7 @@ namespace Robot
 	float fingerGripRoot = 85, thumbGripRoot = 45,
 		fingerGripJoint = 90, thumbGripJoint = 90;
 
-	// to keep track whether gripping is animating in progress
-	bool startGripping = false;
-	bool startUnGripping = false;
-	SwordAnimStates swordState = SWORD_EQUIPPED;
+	SwordAnimStates swordState = SWORD_UNEQUIP_IDLE;
 	class Hand
 	{
 	private:
@@ -376,11 +378,11 @@ namespace Robot
 			GripAnimationVars& gav = pos == POSITION_LEFT ? left : right;
 			if (shouldGrip && !gav._isGripping)
 			{
-				if (!startGripping)
+				if (!gav.startGripping)
 				{
-					startGripping = true;
+					gav.startGripping = true;
 					gav.fingerGripTweenProgress = 0;
-					startUnGripping = false;
+					gav.startUnGripping = false;
 				}
 				// rest angle for all the fingers are 0
 				gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = tween(0, fingerGripRoot, gav.fingerGripTweenProgress += 0.01);
@@ -390,7 +392,7 @@ namespace Robot
 				if (gav.fingerGripTweenProgress >= 1)
 				{
 					gav._isGripping = true;
-					startGripping = false;
+					gav.startGripping = false;
 					gav.fingerGripTweenProgress = 0;
 					gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = fingerGripRoot;
 					gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = thumbGripRoot;
@@ -400,11 +402,11 @@ namespace Robot
 			}
 			else if (!shouldGrip && (gav._isGripping || gav.fingerCurrentGripJointAngle != 0 || gav.thumbCurrentGripJointAngle != 0 || gav.fingerCurrentGripRootAngle != 0 || gav.thumbCurrentGripJointAngle != 0))
 			{
-				if (!startUnGripping)
+				if (!gav.startUnGripping)
 				{
-					startUnGripping = true;
+					gav.startUnGripping = true;
 					gav.fingerGripTweenProgress = 0;
-					startGripping = false;
+					gav.startGripping = false;
 				}
 				gav.fingerCurrentGripRootAngle = tween(gav.fingerLastGripRootAngle, 0, gav.fingerGripTweenProgress += 0.01);
 				gav.thumbCurrentGripRootAngle = tween(gav.thumbLastGripRootAngle, 0, gav.fingerGripTweenProgress);
@@ -413,7 +415,7 @@ namespace Robot
 				if (gav.fingerGripTweenProgress >= 1)
 				{
 					gav._isGripping = false;
-					startGripping = false;
+					gav.startGripping = false;
 					gav.fingerGripTweenProgress = 0;
 					gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = gav.fingerLastGripJointAngle = gav.fingerCurrentGripJointAngle = gav.thumbLastGripJointAngle = gav.thumbCurrentGripJointAngle = 0;
 				}
@@ -684,7 +686,7 @@ namespace Robot
 		{ 5, -1.5, 1 },
 	};
 	Point3D rightHandCurrentTarget = rightHandRestTarget;
-	bool rightHandShouldGrip = true;
+	bool rightHandShouldGrip = false;
 	bool leftHandShouldGrip = false;
 
 	bool isWalking = false;
@@ -716,12 +718,9 @@ namespace Robot
 	float shieldCurrentRotateY = shieldRestRotateY;
 	float shieldLastRotateY = shieldCurrentRotateY;
 
-
-	bool setSwordEquip = true;
 	Transform swordUnequipFlyOutDest;
 	Transform swordUnequipAnim; // also used for idle states
 	Transform swordUnequipFlyInFrom;
-	float swordTween = 0;
 
 	// cuz cannot execute set value outside of a function
 	void initWeaponRestAndOriStates()
@@ -749,11 +748,32 @@ namespace Robot
 	Point3D swordReleaseHandTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 4, rightHandRestTarget.z + 5, { 255, 255, 255} };
 	float swordReleasePalmRotation = 30;
 
-	NowAnimating animating = NONE; // if is animating other stuff, cannot walk
+	bool setSwordEquip = false;
+	float swordTween = 0;
+
+	int attackWithSwordTargetIndex = 0;
+	Point3D attackWithSwordVerStartSwingTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 9.0f, rightHandRestTarget.z + 8.0f }; // start swinging target
+	Point3D attackWithSwordVerSwingTillTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 2.5f, rightHandRestTarget.z + 8.0f }; // max forward swing action
+	bool attackWithSword = false;
+	SwordAttackTypes attackWithSwordType = SWORD_ATK_HOR; // alternate attacking styles
+	AttackWithSwordAnimState currentAttackSwordAnimState = SWORD_ATK_IDLE;
+	float attackWithSwordTween = 0;
+
+	// TODO package these as the "customization feature" to allow the "director" to customize every hand movement
+	// for inverse kinematic debugs
+	Point3D rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y, rightHandRestTarget.z, { 255, 255, 255} };
+	Point3D leftHandTargetDebug = { leftHandRestTarget.x, leftHandRestTarget.y, leftHandRestTarget.z, { 255, 255, 255} };
+	Point3D rightLegTargetDebug = { rightLegRestTarget.x, rightLegRestTarget.y, rightLegRestTarget.z, { 255, 255, 255} };
+	Point3D leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
+
+	NowAnimating animating = ANIMATING_NONE; // if is animating other stuff, cannot walk
 	void main()
 	{
 		if (isWalking && animating == WALK)
 		{
+			// hmmmmmm maybe when walking hands should be gripped
+			leftHandShouldGrip = rightHandShouldGrip = true;
+
 			int walkAnimCount = sizeof(leftLegWalkTargets) / sizeof(leftLegWalkTargets[0]);
 
 			// walking leg animation
@@ -798,9 +818,14 @@ namespace Robot
 		if (!isWalking 
 			&& (leftLegCurrentTarget != leftLegRestTarget || rightLegCurrentTarget != rightLegRestTarget)
 			&& (leftHandCurrentTarget != leftHandRestTarget || rightHandCurrentTarget != rightHandRestTarget)
-			&& !(animating == WALK)
+			&& (animating == WALK)
 			)
 		{
+			// ungrip
+			leftHandShouldGrip = false;
+			// right hand ungrip or not should be decided by whether is holding a sword
+			rightHandShouldGrip = swordState == SWORD_EQUIPPED;
+			
 			// tween back
 			leftLegCurrentTarget = tween(leftLegWalkTargets[walkingAnimationIndex], leftLegRestTarget, stopWalkingTweenProgress += 0.005);
 			rightLegCurrentTarget = tween(rightLegWalkTargets[walkingAnimationIndex], rightLegRestTarget, stopWalkingTweenProgress);
@@ -821,11 +846,12 @@ namespace Robot
 				rightLegCurrentTarget = rightLegRestTarget;
 				leftHandCurrentTarget = leftHandRestTarget;
 				rightHandCurrentTarget = rightHandRestTarget;
-				animating = NONE;
+				animating = ANIMATING_NONE;
 			}
 		}
 
-		if (setShieldActive && !shieldActivated)
+		// when equipping sword cannot activate otherwise will crash (sword too long, thanks soon chee ;))
+		if (setShieldActive && !shieldActivated && !(swordState == SWORD_EQUIPPED)) 
 		{
 			if (!shieldActivating)
 			{
@@ -850,7 +876,7 @@ namespace Robot
 				shieldUnactivateTweenProgress = 0;
 				shieldLastState = shieldCurrentState = shieldActiveState;
 				shieldLastRotateY = shieldCurrentRotateY = shieldActiveRotateY;
-				animating = NONE;
+				// ehh? why no set animating back to none??? cuz when shield is activated, ntg else should be able to run
 			}
 		}
 		if (!setShieldActive && (shieldActivated || shieldCurrentState != shieldRestState || shieldCurrentRotateY != shieldRestRotateY))
@@ -877,7 +903,7 @@ namespace Robot
 				shieldUnactivateTweenProgress = 0;
 				shieldLastState = shieldCurrentState = shieldRestState;
 				shieldLastRotateY = shieldCurrentRotateY = shieldRestRotateY;
-				animating = NONE;
+				animating = ANIMATING_NONE;
 			}
 		}
 
@@ -889,6 +915,71 @@ namespace Robot
 		Hand rightHand({ 5, 8, 0 });
 		Hand leftHand({ -5, 8, 0 }, POSITION_LEFT);
 
+		// equipping a sword
+		if (setSwordEquip)
+		{
+			if (swordState == SWORD_UNEQUIP_IDLE)
+			{
+				// ntg special, proceed to next state
+				swordState = SWORD_EQUIP_FLYOUT;
+			}
+			if (swordState == SWORD_EQUIP_FLYOUT)
+			{
+				// sword flyout from idle position to the "flyin" position
+				// when fly out eh time hand can be ready to fetch the sword d
+				swordUnequipAnim.transX = tween(0, swordUnequipFlyInFrom.transX, swordTween += 0.005);
+				swordUnequipAnim.transY = tween(0, swordUnequipFlyInFrom.transY, swordTween);
+				swordUnequipAnim.transZ = tween(0, swordUnequipFlyInFrom.transZ, swordTween);
+
+				rightHandCurrentTarget = tween(rightHandRestTarget, swordReleaseHandTarget, swordTween); 
+				rightHandPalmYRotation = tween(rightHandPalmRestYRotation, swordReleasePalmRotation, swordTween);
+				if (swordTween >= 1)
+				{
+					swordTween = 0;
+					swordUnequipAnim.transX = swordUnequipFlyInFrom.transX;
+					swordUnequipAnim.transY = swordUnequipFlyInFrom.transY;
+					swordUnequipAnim.transZ = swordUnequipFlyInFrom.transZ;
+
+					rightHandCurrentTarget = swordReleaseHandTarget;
+					rightHandPalmYRotation = swordReleasePalmRotation;
+					swordState = SWORD_EQUIP_FLYIN;
+				}
+			}
+			if (swordState == SWORD_EQUIP_FLYIN)
+			{
+				swordUnequipAnim.transX = tween(swordUnequipFlyOutDest.transX, 0, swordTween += 0.005);
+				swordUnequipAnim.transY = tween(swordUnequipFlyOutDest.transY, 0, swordTween);
+				swordUnequipAnim.transZ = tween(swordUnequipFlyOutDest.transZ, 0, swordTween);
+
+				if (swordTween >= 1)
+				{
+					swordTween = 0;
+					swordUnequipAnim.transX = swordUnequipAnim.transY = swordUnequipAnim.transZ = 0;
+					// go to next state
+					swordState = SWORD_EQUIPPED;
+				}
+			}
+			if (swordState == SWORD_EQUIPPED && animating == SWORD_EQUIP_UNEQUIP)
+			{
+				// grip the sword then move back to rest position
+				if (!rightHand.isGripping())
+				{
+					rightHandShouldGrip = true;
+				}
+				else if (rightHand.isGripping() && (rightHandCurrentTarget != rightHandRestTarget || rightHandPalmYRotation != rightHandPalmRestYRotation)) // if finally gripped then can move back to rest position
+				{
+					rightHandCurrentTarget = tween(swordReleaseHandTarget, rightHandRestTarget, swordTween += 0.005); 
+					rightHandPalmYRotation = tween(swordReleasePalmRotation, rightHandPalmRestYRotation, swordTween);
+					if (swordTween >= 1)
+					{
+						swordTween = 0;
+						rightHandCurrentTarget = rightHandRestTarget;
+						rightHandPalmYRotation = rightHandPalmRestYRotation;
+						animating = ANIMATING_NONE; // officially finished
+					}
+				}
+			}
+		}
 		// unequipping a sword
 		if (!setSwordEquip)
 		{
@@ -898,6 +989,7 @@ namespace Robot
 				{
 					swordTween = 1;
 					rightHandCurrentTarget = swordReleaseHandTarget;
+					rightHandPalmYRotation = swordReleasePalmRotation;
 					// once reach, then start ungrip
 					// call for ungrip
 					rightHandShouldGrip = false;
@@ -913,7 +1005,7 @@ namespace Robot
 					// shud be in rest position for right hand when want unequip
 					rightHandCurrentTarget = tween(rightHandRestTarget, swordReleaseHandTarget, swordTween);
 					rightHandPalmYRotation = tween(rightHandPalmRestYRotation, swordReleasePalmRotation, swordTween);
-					swordTween += 0.05;
+					swordTween += 0.005;
 				}
 			}
 			if (swordState == SWORD_UNEQUIP_FLYOUT)
@@ -921,12 +1013,18 @@ namespace Robot
 				swordUnequipAnim.transX = tween(0, swordUnequipFlyOutDest.transX, swordTween += 0.005);
 				swordUnequipAnim.transY = tween(0, swordUnequipFlyOutDest.transY, swordTween);
 				swordUnequipAnim.transZ = tween(0, swordUnequipFlyOutDest.transZ, swordTween);
+				// when flying out the hand can return to ori rest position d
+				rightHandCurrentTarget = tween(swordReleaseHandTarget, rightHandRestTarget, swordTween); 
+				rightHandPalmYRotation = tween(swordReleasePalmRotation, rightHandPalmRestYRotation, swordTween);
 				if (swordTween >= 1)
 				{
 					swordTween = 0;
 					swordUnequipAnim.transX = swordUnequipFlyOutDest.transX;
 					swordUnequipAnim.transY = swordUnequipFlyOutDest.transY;
 					swordUnequipAnim.transZ = swordUnequipFlyOutDest.transZ;
+
+					rightHandCurrentTarget = rightHandRestTarget;
+					rightHandPalmYRotation = rightHandPalmRestYRotation;
 					swordState = SWORD_UNEQUIP_FLYIN;
 				}	
 			}
@@ -943,11 +1041,13 @@ namespace Robot
 					swordUnequipAnim.transZ = 0;
 					swordState = SWORD_UNEQUIP_IDLE;
 					// finish whole sequence d
-					animating = NONE;
+					animating = ANIMATING_NONE;
 				}
 			}
 		}
-		if (swordState == SWORD_UNEQUIP_FLYOUT)
+
+		// when equipping flying in, also need to show this
+		if (swordState == SWORD_UNEQUIP_FLYOUT || swordState == SWORD_EQUIP_FLYIN)
 		{
 			// when hand gripping wan release back
 			cv
@@ -1001,8 +1101,8 @@ namespace Robot
 			.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 			;
 
-		// sword by default float behind body
-		if (swordState == SWORD_UNEQUIP_FLYIN || swordState == SWORD_UNEQUIP_IDLE)
+		// sword by default float behind body, when fly out to become equipped also need show
+		if (swordState == SWORD_UNEQUIP_FLYIN || swordState == SWORD_UNEQUIP_IDLE || swordState == SWORD_EQUIP_FLYOUT)
 		{
 			cv
 				.pushMatrix()
@@ -1013,6 +1113,56 @@ namespace Robot
 				;
 			SoonChee::sword();
 			cv.popMatrix();
+		}
+
+		// only when equipped with sword can activate this
+		if (attackWithSword && swordState == SWORD_EQUIPPED && animating == ATTACK_WITH_SWORD)
+		{
+			// if IDLE then hand ***SHOULD*** be in rest position
+			if (currentAttackSwordAnimState == SWORD_ATK_IDLE)
+			{
+				// move hand to the pre-swing target
+				rightHandCurrentTarget = tween(rightHandRestTarget, attackWithSwordVerStartSwingTarget, attackWithSwordTween += 0.005);
+
+				if (attackWithSwordTween >= 1)
+				{
+					attackWithSwordTween = 0;
+					rightHandCurrentTarget = attackWithSwordVerStartSwingTarget;
+					currentAttackSwordAnimState = SWORD_ATK_START_SWING; // move to next state
+				}
+			}
+
+			if (currentAttackSwordAnimState == SWORD_ATK_START_SWING)
+			{
+				// swing until max in front
+				rightHandCurrentTarget = tween(attackWithSwordVerStartSwingTarget, attackWithSwordVerSwingTillTarget, attackWithSwordTween += 0.05);
+
+				if (attackWithSwordTween >= 1)
+				{
+					attackWithSwordTween = 0;
+					rightHandCurrentTarget = attackWithSwordVerSwingTillTarget;
+					currentAttackSwordAnimState = SWORD_ATK_FINISH_SWING;
+				}
+			}
+
+			if (currentAttackSwordAnimState == SWORD_ATK_FINISH_SWING)
+			{
+				// swing back to rest target
+				rightHandCurrentTarget = tween(attackWithSwordVerSwingTillTarget, rightHandRestTarget, attackWithSwordTween += 0.05);
+
+				if (attackWithSwordTween >= 1)
+				{
+					attackWithSwordTween = 0;
+					rightHandCurrentTarget = rightHandRestTarget;
+					currentAttackSwordAnimState = SWORD_ATK_IDLE;
+					animating = ANIMATING_NONE;
+				}
+			}
+		}
+		else if (attackWithSword && swordState != SWORD_EQUIPPED) // prob sword not equipped, free up the animating space to let others animate
+		{
+			attackWithSword = false;
+			animating = ANIMATING_NONE;
 		}
 
 		// arm joint to body
@@ -1060,8 +1210,8 @@ namespace Robot
 
 		// solve the transformations and draw
 		rightHand.solveIK(rightHandCurrentTarget);
-		//rightHand.solveIK(swordReleasePosition);
-		//cv.pointSize(20).point(swordReleaseHandTarget);
+		//rightHand.solveIK(rightHandTargetDebug);
+		//cv.pointSize(20).point(rightHandTargetDebug);
 		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation, rightHandPalmYRotation);
 		//rightHand.forceYRotation(debugRootY, debugJointY);
 		rightHand.grip(rightHandShouldGrip);
@@ -1111,7 +1261,7 @@ namespace Robot
 		switch (key)
 		{
 		case 'W': 
-			if (animating != NONE && animating != WALK)
+			if (animating != ANIMATING_NONE && animating != WALK)
 				break;
 			animating = WALK;
 			isWalking = true;
@@ -1120,28 +1270,34 @@ namespace Robot
 			shouldGrip = !shouldGrip;
 			break;
 		case 'D': // defense
-			if (animating != NONE && animating != SHIELD) // shudnt hold
+			if (animating != ANIMATING_NONE && animating != SHIELD) // shudnt hold
 				break;
 			animating = SHIELD;
 			setShieldActive = !setShieldActive;
 			break;
 		case 'S':
-			if (animating != NONE) // only finish equip/unequipn ka can execute again
+			if (animating != ANIMATING_NONE) // only finish equip/unequipn ka can execute again
 				break;
 			animating = SWORD_EQUIP_UNEQUIP;
 			setSwordEquip = !setSwordEquip;
 			break;
+		case 'A': // attack with sword
+			if (animating != ANIMATING_NONE) // only ntg animating only can attack with sword
+				break;
+			attackWithSword = true;
+			animating = ATTACK_WITH_SWORD;
+			break;
 		case 'I':
-			swordReleaseHandTarget.y += 0.5;
+			rightHandTargetDebug.y += 0.5;
 			break;
 		case 'K':
-			swordReleaseHandTarget.y -= 0.5;
+			rightHandTargetDebug.y -= 0.5;
 			break;
 		case 'J':
-			swordReleaseHandTarget.z += 0.5;
+			rightHandTargetDebug.z += 0.5;
 			break;
 		case 'L':
-			swordReleaseHandTarget.z -= 0.5;
+			rightHandTargetDebug.z -= 0.5;
 			break;
 		}
 	}
