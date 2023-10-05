@@ -853,6 +853,8 @@ namespace Robot
 	Point3D swordReleaseHandTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 4, rightHandRestTarget.z + 5, { 255, 255, 255} };
 	float swordReleasePalmRotation = 30;
 
+	bool hideUnequippedWeapon = false;
+
 	bool setSwordEquip = false;
 	float swordTween = 0;
 
@@ -979,6 +981,7 @@ namespace Robot
 		}
 
 		// when equipping sword cannot activate otherwise will crash (sword too long, thanks soon chee ;))
+		// when hiding unequipped weapon, should not be able to do anything with shields
 		if (setShieldActive && !shieldActivated) 
 		{
 			if (!shieldActivating)
@@ -1232,7 +1235,9 @@ namespace Robot
 			;
 
 		// sword by default float behind body, when fly out to become equipped also need show
-		if (swordState == SWORD_UNEQUIP_FLYIN || swordState == SWORD_UNEQUIP_IDLE || swordState == SWORD_EQUIP_FLYOUT)
+		if (!hideUnequippedWeapon)
+		{
+			if (swordState == SWORD_UNEQUIP_FLYIN || swordState == SWORD_UNEQUIP_IDLE || swordState == SWORD_EQUIP_FLYOUT)
 		{
 			cv
 				.pushMatrix()
@@ -1243,6 +1248,7 @@ namespace Robot
 				;
 			SoonChee::sword();
 			cv.popMatrix();
+		}
 		}
 
 		// only when equipped with sword can activate this
@@ -1584,27 +1590,30 @@ namespace Robot
 			;
 
 		// duli eh float above hand, flw body orientation
-		// right shield
-		cv.pushMatrix();
-		cv.rotate(shieldCurrentState.rotAngle, 0, 0, 1);
-		cv.rotate(shieldCurrentRotateY, 0, 1, 0);
-		cv.translate(shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
-		cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
+		if (!hideUnequippedWeapon)
+		{
+			// right shield
+			cv.pushMatrix();
+			cv.rotate(shieldCurrentState.rotAngle, 0, 0, 1);
+			cv.rotate(shieldCurrentRotateY, 0, 1, 0);
+			cv.translate(shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
+			cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
 
-		SoonChee::shield();
+			SoonChee::shield();
 
-		cv.popMatrix();
+			cv.popMatrix();
 
-		// left shield
-		cv.pushMatrix();
-		cv.rotate(shieldCurrentState.rotAngle, 0, 0, -1);
-		cv.rotate(shieldCurrentRotateY, 0, -1, 0);
-		cv.translate(-shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
-		cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
+			// left shield
+			cv.pushMatrix();
+			cv.rotate(shieldCurrentState.rotAngle, 0, 0, -1);
+			cv.rotate(shieldCurrentRotateY, 0, -1, 0);
+			cv.translate(-shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
+			cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
 
-		SoonChee::shield();
+			SoonChee::shield();
 
-		cv.popMatrix();
+			cv.popMatrix();
+		}
 
 		// solve the transformations and draw
 		if (inEditMode) // rn edit mode only affects inverse kinematic targets
@@ -1907,13 +1916,15 @@ namespace Robot
 			shouldGrip = !shouldGrip;
 			break;
 		case 'D': // defense
-			if ((animating != ANIMATING_NONE && animating != SHIELD) || swordState == SWORD_EQUIPPED) // shudnt hold and shudnt be able to be toggled when sword is equipped
+			// only not hiding unequipped weapon baru can activate defense
+			if ((animating != ANIMATING_NONE && animating != SHIELD) || hideUnequippedWeapon || swordState == SWORD_EQUIPPED) // shudnt hold and shudnt be able to be toggled when sword is equipped
 				break;
 			animating = SHIELD;
 			setShieldActive = !setShieldActive;
 			break;
 		case 'S':
-			if (animating != ANIMATING_NONE) // only finish equip/unequipn ka can execute again
+			// only can equip / unequip sword when the sword is shown
+			if (animating != ANIMATING_NONE || hideUnequippedWeapon) // only finish equip/unequipn ka can execute again
 				break;
 			animating = SWORD_EQUIP_UNEQUIP;
 			setSwordEquip = !setSwordEquip;
@@ -1930,6 +1941,9 @@ namespace Robot
 				break;
 			kamekamehaCharging = true;
 			animating = CHARGE_KAMEKAMEHA;
+			break;
+		case 'H':
+			hideUnequippedWeapon = !hideUnequippedWeapon;
 			break;
 		}
 	}
