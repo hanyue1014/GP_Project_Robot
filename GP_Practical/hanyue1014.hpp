@@ -9,10 +9,12 @@ namespace Robot
 {
 	// for hand and leg use, define position so place wont weird weird eh
 	enum Position { POSITION_LEFT, POSITION_RIGHT };
+	enum GripType { GRIP_FULL, GRIP_KAMEKAMEHA };
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
-	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR }; 
+	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR };
 	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_SWING_OVERSHOOT, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
 	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ANIMATING_NONE };
+	enum EditModeEditTargets { EDIT_LEFT_HAND, EDIT_RIGHT_HAND, EDIT_LEFT_LEG, EDIT_RIGHT_LEG };
 
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
@@ -140,8 +142,16 @@ namespace Robot
 	GripAnimationVars left;
 	GripAnimationVars right;
 	// tested - grip angles for the fingers
-	float fingerGripRoot = 85, thumbGripRoot = 45,
-		fingerGripJoint = 90, thumbGripJoint = 90;
+	struct GripAngles
+	{
+		float fingerGripRoot = 0, thumbGripRoot = 5,
+			fingerGripJoint = 0, thumbGripJoint = 0;
+		GripAngles(float fgr, float tgr, float fgj, float tgj)
+			: fingerGripRoot(fgr), fingerGripJoint(fgj), thumbGripRoot(tgr), thumbGripJoint(tgj) {}
+	};
+
+	GripAngles fullGrip(85, 45, 90, 90);
+	GripAngles kamekamehaGrip(0, 0, 0, 0);
 
 	SwordAnimStates swordState = SWORD_UNEQUIP_IDLE;
 	class Hand
@@ -150,7 +160,7 @@ namespace Robot
 		float newX, newY, newZ; // marks the newX and newY of the top side's sphere
 		float rootAngle = 0, rootYRotation = 0;
 		float jointAngle = 180, jointYRotation = 0;
-		float handYRotation = 0;
+		float handYRotation = 0, handZRotation = 30;
 		const float upperArmLength = 5, botArmLength = 5;
 		Position pos;
 
@@ -171,7 +181,7 @@ namespace Robot
 				.cuboid({ -1, 1, 1, {255, 255, 0} }, { 1, -1, (0 + upperArmLength) }) // 0 cuz wanna factor in the bola
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				;
-				
+
 			cv.reflect(REFLECT_Y, pos == POSITION_LEFT);
 			// just styles for upper arm eh bola	
 			cv
@@ -270,6 +280,7 @@ namespace Robot
 				.pushMatrix()
 				.rotate(90, 1, 0, 0)
 				.translate(0, -5, 0) // cuz above alrd translate 6 d
+				.rotate(handZRotation, 0, 0, pos == POSITION_RIGHT ? 1 : -1)
 				.rotate(handYRotation, 0, pos == POSITION_RIGHT ? -1 : 1, 0)
 				.cuboid({ -0.25, 0, 0.5, primary }, { 0.25, 0, -0.5 }, { -0.25, -0.5, 0.75 }, { 0.25, -0.5, -0.75 })
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
@@ -283,7 +294,7 @@ namespace Robot
 			GripAnimationVars gav = pos == POSITION_LEFT ? left : right;
 			for (int i = 0; i < 4; i++)
 			{
-				Finger f({ 0, -(1.5 + 0.125), -(0.75f - ((i+1) * 0.225f) - (i * 0.125f)) }, pos);
+				Finger f({ 0, -(1.5 + 0.125), -(0.75f - ((i + 1) * 0.225f) - (i * 0.125f)) }, pos);
 				f.setAngle(gav.fingerCurrentGripRootAngle, gav.fingerCurrentGripJointAngle);
 				f.draw();
 			}
@@ -313,7 +324,7 @@ namespace Robot
 				;
 
 			cv.popMatrix(); // lower arm rotations
-				
+
 			cv.popMatrix(); // from root
 
 			cv.popMatrix();
@@ -372,10 +383,11 @@ namespace Robot
 		}
 
 		// tells the hand to start gripping
-		void grip(bool shouldGrip)
+		void grip(bool shouldGrip, GripType gt = GRIP_FULL)
 		{
 			// cuz need change value, need to use reference
 			GripAnimationVars& gav = pos == POSITION_LEFT ? left : right;
+			GripAngles ga = gt == GRIP_FULL ? fullGrip : kamekamehaGrip;
 			if (shouldGrip && !gav._isGripping)
 			{
 				if (!gav.startGripping)
@@ -385,19 +397,19 @@ namespace Robot
 					gav.startUnGripping = false;
 				}
 				// rest angle for all the fingers are 0
-				gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = tween(0, fingerGripRoot, gav.fingerGripTweenProgress += 0.01);
-				gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = tween(0, thumbGripRoot, gav.fingerGripTweenProgress);
-				gav.fingerLastGripJointAngle = gav.fingerCurrentGripJointAngle = tween(0, fingerGripJoint, gav.fingerGripTweenProgress);
-				gav.thumbLastGripJointAngle = gav.thumbCurrentGripJointAngle = tween(0, thumbGripJoint, gav.fingerGripTweenProgress);
+				gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = tween(0, ga.fingerGripRoot, gav.fingerGripTweenProgress += 0.01);
+				gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = tween(0, ga.thumbGripRoot, gav.fingerGripTweenProgress);
+				gav.fingerLastGripJointAngle = gav.fingerCurrentGripJointAngle = tween(0, ga.fingerGripJoint, gav.fingerGripTweenProgress);
+				gav.thumbLastGripJointAngle = gav.thumbCurrentGripJointAngle = tween(0, ga.thumbGripJoint, gav.fingerGripTweenProgress);
 				if (gav.fingerGripTweenProgress >= 1)
 				{
 					gav._isGripping = true;
 					gav.startGripping = false;
 					gav.fingerGripTweenProgress = 0;
-					gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = fingerGripRoot;
-					gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = thumbGripRoot;
-					gav.fingerLastGripJointAngle = gav.fingerCurrentGripJointAngle = fingerGripJoint;
-					gav.thumbLastGripJointAngle = gav.thumbCurrentGripJointAngle = thumbGripJoint;
+					gav.fingerLastGripRootAngle = gav.fingerCurrentGripRootAngle = ga.fingerGripRoot;
+					gav.thumbLastGripRootAngle = gav.thumbCurrentGripRootAngle = ga.thumbGripRoot;
+					gav.fingerLastGripJointAngle = gav.fingerCurrentGripJointAngle = ga.fingerGripJoint;
+					gav.thumbLastGripJointAngle = gav.thumbCurrentGripJointAngle = ga.thumbGripJoint;
 				}
 			}
 			else if (!shouldGrip && (gav._isGripping || gav.fingerCurrentGripJointAngle != 0 || gav.thumbCurrentGripJointAngle != 0 || gav.fingerCurrentGripRootAngle != 0 || gav.thumbCurrentGripJointAngle != 0))
@@ -428,11 +440,12 @@ namespace Robot
 			return gav._isGripping;
 		}
 
-		void forceYRotation(float rootYRot, float jointYRot, float handYRot)
+		void forceYRotation(float rootYRot, float jointYRot, float handYRot, float handZRot)
 		{
 			rootYRotation = rootYRot;
 			jointYRotation = jointYRot;
 			handYRotation = handYRot;
+			handZRotation = handZRot;
 		}
 	};
 
@@ -472,7 +485,7 @@ namespace Robot
 				.replotPrevBlocky3D(GL_LINE_LOOP, { 0, 0, 0 })
 				.reflect()
 				;
-				
+
 			// "armor"
 			// side way and back no need got "floating shield"
 			cv
@@ -522,7 +535,7 @@ namespace Robot
 				.popMatrix()
 				.popMatrix()
 				;
-				
+
 			cv
 				.popMatrix() // knee
 				;
@@ -568,6 +581,7 @@ namespace Robot
 		}
 	};
 
+	// these restTargets all terbalik d, bear with me, for leg targets -> right = left, left = right
 	// leftLeg would go upwards first
 	Point3D leftLegRestTarget = { -2, -13, 0 };
 	Point3D leftLegWalkTargets[] = {
@@ -625,9 +639,11 @@ namespace Robot
 	float leftHandRootRestYRotation = 0;
 	float leftHandJointRestYRotation = 0;
 	float leftHandPalmRestYRotation = 0;
+	float leftHandPalmRestZRotation = 0;
 	float leftHandRootYRotation = leftHandRootRestYRotation;
 	float leftHandJointYRotation = leftHandJointRestYRotation;
 	float leftHandPalmYRotation = leftHandPalmRestYRotation;
+	float leftHandPalmZRotation = leftHandPalmRestZRotation;
 
 	Point3D leftHandRestTarget = { -5, -3, 0 };
 	Point3D leftHandWalkTargets[] = {
@@ -658,9 +674,11 @@ namespace Robot
 	float rightHandRootRestYRotation = 0;
 	float rightHandJointRestYRotation = 0;
 	float rightHandPalmRestYRotation = 0;
+	float rightHandPalmRestZRotation = 0;
 	float rightHandRootYRotation = rightHandRootRestYRotation;
 	float rightHandJointYRotation = rightHandJointRestYRotation;
 	float rightHandPalmYRotation = rightHandPalmRestYRotation;
+	float rightHandPalmZRotation = rightHandPalmZRotation;
 
 	Point3D rightHandRestTarget = { 5, -3, 0 };
 	Point3D rightHandWalkTargets[] = {
@@ -754,20 +772,32 @@ namespace Robot
 	int attackWithSwordTargetIndex = 0;
 	Point3D attackWithSwordVerStartSwingTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 9.0f, rightHandRestTarget.z + 8.0f }; // start swinging target
 	Point3D attackWithSwordVerSwingTillTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 2.5f, rightHandRestTarget.z + 8.0f }; // max forward swing action
-	Point3D attackWithSwordVerSwingOvershootTarget = { rightHandRestTarget.x, rightHandRestTarget.y - 1.0f, rightHandRestTarget.z - 6.0f  }; // max forward swing action
+	Point3D attackWithSwordVerSwingOvershootTarget = { rightHandRestTarget.x, rightHandRestTarget.y - 1.0f, rightHandRestTarget.z - 6.0f }; // max forward swing action
+
+	Point3D attackWithSwordHorStartSwingTarget = { rightHandRestTarget.x, 2, 6 };
+	float attackWithSwordHorStartSwingJointAngle = 50;
+	Point3D attackWithSwordHorSwingTillTarget = { rightHandRestTarget.x, -1, 4 };
+	float attackWithSwordHorSwingTillJointAngle = 30;
+	// when overshoot joint no rotate
+	Point3D attackWithSwordHorSwingOvershootTarget = { rightHandRestTarget.x, -4, -5 };
+
 	bool attackWithSword = false;
 	SwordAttackTypes attackWithSwordType = SWORD_ATK_HOR; // alternate attacking styles
 	AttackWithSwordAnimState currentAttackSwordAnimState = SWORD_ATK_IDLE;
 	float attackWithSwordTween = 0;
+	NowAnimating animating = ANIMATING_NONE; // if is animating other stuff, cannot walk
 
-	// TODO package these as the "customization feature" to allow the "director" to customize every hand movement
-	// for inverse kinematic debugs
+	// the "customization feature" to allow the "director" to customize every hand and leg movement
+	bool inEditMode = false; // extreme customization, TAB to toggle, FUTURE_TODO: add finger grip angle customization
+	EditModeEditTargets editModeTarget = EDIT_RIGHT_HAND;
+	// for inverse kinematic customizations
 	Point3D rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y, rightHandRestTarget.z, { 255, 255, 255} };
 	Point3D leftHandTargetDebug = { leftHandRestTarget.x, leftHandRestTarget.y, leftHandRestTarget.z, { 255, 255, 255} };
 	Point3D rightLegTargetDebug = { rightLegRestTarget.x, rightLegRestTarget.y, rightLegRestTarget.z, { 255, 255, 255} };
 	Point3D leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
+	float rightHandJointYDebug = 0, rightHandRootYDebug = 0, rightHandPalmYDebug = 0, rightHandPalmZDebug = 0;
+	float leftHandJointYDebug = 0, leftHandRootYDebug = 0, leftHandPalmYDebug = 0, leftHandPalmZDebug = 0;
 
-	NowAnimating animating = ANIMATING_NONE; // if is animating other stuff, cannot walk
 	void main()
 	{
 		if (isWalking && animating == WALK)
@@ -913,6 +943,7 @@ namespace Robot
 		cv.popMatrix();
 
 		// create the hands, but don't draw yet cuz transform matrix diff
+		// idk what my brain thinking when i code but apparently my right hand is left hand d now
 		Hand rightHand({ 5, 8, 0 });
 		Hand leftHand({ -5, 8, 0 }, POSITION_LEFT);
 
@@ -1182,12 +1213,14 @@ namespace Robot
 				if (currentAttackSwordAnimState == SWORD_ATK_IDLE)
 				{
 					// move hand to the pre-swing target
-					rightHandCurrentTarget = tween(rightHandRestTarget, attackWithSwordVerStartSwingTarget, attackWithSwordTween += 0.005);
+					rightHandCurrentTarget = tween(rightHandRestTarget, attackWithSwordHorStartSwingTarget, attackWithSwordTween += 0.005);
+					rightHandJointYRotation = tween(rightHandJointRestYRotation, attackWithSwordHorStartSwingJointAngle, attackWithSwordTween);
 
 					if (attackWithSwordTween >= 1)
 					{
 						attackWithSwordTween = 0;
 						rightHandCurrentTarget = attackWithSwordVerStartSwingTarget;
+						rightHandJointYRotation = attackWithSwordHorStartSwingJointAngle;
 						currentAttackSwordAnimState = SWORD_ATK_START_SWING; // move to next state
 					}
 				}
@@ -1195,25 +1228,41 @@ namespace Robot
 				if (currentAttackSwordAnimState == SWORD_ATK_START_SWING)
 				{
 					// swing until max in front
-					rightHandCurrentTarget = tween(attackWithSwordVerStartSwingTarget, attackWithSwordVerSwingTillTarget, attackWithSwordTween += 0.05);
+					rightHandCurrentTarget = tween(attackWithSwordHorStartSwingTarget, attackWithSwordHorSwingTillTarget, attackWithSwordTween += 0.05);
+					rightHandJointYRotation = tween(attackWithSwordHorStartSwingJointAngle, attackWithSwordHorSwingTillJointAngle, attackWithSwordTween);
 
 					if (attackWithSwordTween >= 1)
 					{
 						attackWithSwordTween = 0;
-						rightHandCurrentTarget = attackWithSwordVerSwingTillTarget;
+						rightHandCurrentTarget = attackWithSwordHorSwingTillTarget;
+						rightHandJointYRotation = attackWithSwordHorSwingTillJointAngle;
 						currentAttackSwordAnimState = SWORD_ATK_FINISH_SWING;
 					}
 				}
 
 				if (currentAttackSwordAnimState == SWORD_ATK_FINISH_SWING)
 				{
+					rightHandCurrentTarget = tween(attackWithSwordHorSwingTillTarget, attackWithSwordHorSwingOvershootTarget, attackWithSwordTween += 0.05);
+
+					if (attackWithSwordTween >= 1)
+					{
+						attackWithSwordTween = 0;
+						rightHandCurrentTarget = attackWithSwordHorSwingOvershootTarget;
+						currentAttackSwordAnimState = SWORD_ATK_SWING_OVERSHOOT;
+					}
+				}
+
+				if (currentAttackSwordAnimState == SWORD_ATK_SWING_OVERSHOOT)
+				{
 					// swing back to rest target
-					rightHandCurrentTarget = tween(attackWithSwordVerSwingTillTarget, rightHandRestTarget, attackWithSwordTween += 0.05);
+					rightHandCurrentTarget = tween(attackWithSwordHorSwingOvershootTarget, rightHandRestTarget, attackWithSwordTween += 0.01);
+					rightHandJointYRotation = tween(attackWithSwordHorSwingTillJointAngle, rightHandJointRestYRotation, attackWithSwordTween);
 
 					if (attackWithSwordTween >= 1)
 					{
 						attackWithSwordTween = 0;
 						rightHandCurrentTarget = rightHandRestTarget;
+						rightHandJointYRotation = rightHandJointRestYRotation;
 						currentAttackSwordAnimState = SWORD_ATK_IDLE;
 						animating = ANIMATING_NONE;
 					}
@@ -1270,16 +1319,32 @@ namespace Robot
 		cv.popMatrix();
 
 		// solve the transformations and draw
-		rightHand.solveIK(rightHandCurrentTarget);
-		//rightHand.solveIK(rightHandTargetDebug);
-		//cv.pointSize(20).point(rightHandTargetDebug);
-		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation, rightHandPalmYRotation);
+		if (inEditMode) // rn edit mode only affects inverse kinematic targets
+		{
+			rightHand.solveIK(rightHandTargetDebug);
+			cv.pointSize(20).point({ rightHandTargetDebug.x + 2, rightHandTargetDebug.y, rightHandTargetDebug.z, rightHandTargetDebug.c }); // move the point out abit for easier visualisation
+			rightHand.forceYRotation(rightHandRootYDebug, rightHandJointYDebug, rightHandPalmYDebug, rightHandPalmZDebug);
+		}
+		else 
+		{
+			rightHand.solveIK(rightHandCurrentTarget);
+			rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation, rightHandPalmYRotation, rightHandPalmZRotation);
+		}
 		//rightHand.forceYRotation(debugRootY, debugJointY);
 		rightHand.grip(rightHandShouldGrip);
 		rightHand.draw();
 
-		leftHand.solveIK(leftHandCurrentTarget);
-		leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation, leftHandPalmYRotation);
+		if (inEditMode) // rn edit mode only affects inverse kinematic targets
+		{
+			leftHand.solveIK(leftHandTargetDebug);
+			cv.pointSize(20).point({ leftHandTargetDebug.x - 2, leftHandTargetDebug.y, leftHandTargetDebug.z, leftHandTargetDebug.c }); // move the point out abit for easier visualisation
+			leftHand.forceYRotation(leftHandRootYDebug, leftHandJointYDebug, leftHandPalmYDebug, leftHandPalmZDebug);
+		}
+		else 
+		{
+			leftHand.solveIK(leftHandCurrentTarget);
+			leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation, leftHandPalmYRotation, leftHandPalmZRotation);
+		}
 		leftHand.grip(leftHandShouldGrip);
 		leftHand.draw();
 
@@ -1310,15 +1375,224 @@ namespace Robot
 			;
 
 		Leg leftLeg({ 2, -2, 0 });
-		leftLeg.solveIK(leftLegCurrentTarget);
+		
+		// dk when my fking brain was coding the targets, left target affects right leg right target affects left leg
+		// yes, my nice brain coded the inverse stuff, but just deal with it mkay?
+		if (inEditMode) // rn edit mode only affects inverse kinematic targets
+		{
+			leftLeg.solveIK(rightLegTargetDebug);
+			// dk why is - but it works, it works
+			cv.pointSize(20).point({ rightLegTargetDebug.x + 2, rightLegTargetDebug.y, rightLegTargetDebug.z, rightLegTargetDebug.c }); // move the point out abit for easier visualisation
+		}
+		else 
+		{
+			leftLeg.solveIK(rightLegCurrentTarget);
+		}
 		leftLeg.draw();
 		Leg rightLeg({ -2, -2, 0 });
-		rightLeg.solveIK(rightLegCurrentTarget);
+		if (inEditMode) // rn edit mode only affects inverse kinematic targets
+		{
+			rightLeg.solveIK(leftLegTargetDebug);
+			cv.pointSize(20).point({ leftLegTargetDebug.x - 2, leftLegTargetDebug.y, leftLegTargetDebug.z, leftLegTargetDebug.c }); // move the point out abit for easier visualisation
+		}
+		else
+		{
+			rightLeg.solveIK(leftLegCurrentTarget);
+		}
 		rightLeg.draw();
 	}
 
 	void handleKeyDownEvent(WPARAM key)
 	{
+		if (key == VK_TAB)
+		{
+			inEditMode = !inEditMode;
+			return;
+		}
+
+		// FUTURE ENHANCE maybe can extend on this edit capabilities
+		if (inEditMode)
+		{
+			// all the keys are different set d
+			// F2 -> edit leftHandTarget, F3 -> edit rightHandTarget, F4 -> edit leftLegTarget, F5 -> edit rightLegTarget
+			switch (key)
+			{
+			case VK_F2:
+				editModeTarget = EDIT_LEFT_HAND;
+				break;
+			case VK_F3:
+				editModeTarget = EDIT_RIGHT_HAND;
+				break;
+			case VK_F4:
+				editModeTarget = EDIT_LEFT_LEG;
+				break;
+			case VK_F5:
+				editModeTarget = EDIT_RIGHT_LEG;
+				break;
+			}
+
+			// taking pointer cuz wanna edit the values, not taking reference cuz we dk which one yet
+			Point3D* editingIKTarget;
+			bool isLeft = false; // if isLeft we need to flip the z movement
+			switch (editModeTarget)
+			{
+			case Robot::EDIT_LEFT_HAND:
+				editingIKTarget = &leftHandTargetDebug;
+				isLeft = true;
+				break;
+			case Robot::EDIT_RIGHT_HAND:
+				editingIKTarget = &rightHandTargetDebug;
+				break;
+			case Robot::EDIT_LEFT_LEG:
+				editingIKTarget = &leftLegTargetDebug;
+				isLeft = true;
+				break;
+			case Robot::EDIT_RIGHT_LEG:
+				editingIKTarget = &rightLegTargetDebug;
+				break;
+			default:
+				return; // impossible reach here
+			}
+
+			switch (key)
+			{
+			case 'W':
+				editingIKTarget->y += 0.5;
+				break;
+			case 'S':
+				editingIKTarget->y -= 0.5;
+				break;
+			case 'A':
+				editingIKTarget -> z += isLeft ? -0.5 : 0.5;
+				break;
+			case 'D':
+				editingIKTarget->z -= isLeft ? -0.5 : 0.5;
+				break;
+			}
+
+			// for leg targets, cannot go more than y == -2, so y must be < -2
+			if (leftLegTargetDebug.y >= -2)
+			{
+				leftLegTargetDebug.y = -2.5; // max -2.5 la
+			}
+
+			if (rightLegTargetDebug.y >= -2)
+			{
+				rightLegTargetDebug.y = -2.5;
+			}
+
+			// only for hand, rotate the rootY or jointY or the palm
+			if (key == 'L') // joint up
+			{
+				if (editModeTarget == EDIT_RIGHT_HAND)
+				{
+					rightHandJointYDebug += 1;
+				}
+				else if (editModeTarget == EDIT_LEFT_HAND)
+				{
+					leftHandJointYDebug += 1;
+				}
+			}
+
+			if (key == 'K') // joint down
+			{
+				if (editModeTarget == EDIT_RIGHT_HAND)
+				{
+					rightHandJointYDebug -= 1;
+				}
+				else if (editModeTarget == EDIT_LEFT_HAND)
+				{
+					leftHandJointYDebug -= 1;
+				}
+			}
+
+			if (key == 'J') // root up
+			{
+				if (editModeTarget == EDIT_RIGHT_HAND)
+				{
+					rightHandRootYDebug += 1;
+				}
+				else if (editModeTarget == EDIT_LEFT_HAND)
+				{
+					leftHandRootYDebug += 1;
+				}
+			}
+
+			if (key == 'H') // root down
+			{
+				if (editModeTarget == EDIT_RIGHT_HAND)
+				{
+					rightHandRootYDebug -= 1;
+				}
+				else if (editModeTarget == EDIT_LEFT_HAND)
+				{
+					leftHandRootYDebug -= 1;
+				}
+			}
+
+			if (key == 'M') // palm Y up
+			{
+				if (editModeTarget == EDIT_RIGHT_HAND)
+				{
+					rightHandPalmYDebug += 1;
+				}
+				else if (editModeTarget == EDIT_LEFT_HAND)
+				{
+					leftHandPalmYDebug += 1;
+				}
+			}
+
+			if (key == 'N') // palm Y down
+			{
+				if (editModeTarget == EDIT_RIGHT_HAND)
+				{
+					rightHandPalmYDebug -= 1;
+				}
+				else if (editModeTarget == EDIT_LEFT_HAND)
+				{
+					leftHandPalmYDebug -= 1;
+				}
+			}
+
+			if (key == 'B') // palm Z up
+			{
+				if (editModeTarget == EDIT_RIGHT_HAND)
+				{
+					rightHandPalmZDebug += 1;
+				}
+				else if (editModeTarget == EDIT_LEFT_HAND)
+				{
+					leftHandPalmZDebug += 1;
+				}
+			}
+
+			if (key == 'V') // palm Z down
+			{
+				if (editModeTarget == EDIT_RIGHT_HAND)
+				{
+					rightHandPalmZDebug -= 1;
+				}
+				else if (editModeTarget == EDIT_LEFT_HAND)
+				{
+					leftHandPalmZDebug -= 1;
+				}
+			}
+
+			// space reset all
+			if (key == VK_SPACE)
+			{
+
+				rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y, rightHandRestTarget.z, { 255, 255, 255} };
+				leftHandTargetDebug = { leftHandRestTarget.x, leftHandRestTarget.y, leftHandRestTarget.z, { 255, 255, 255} };
+				rightLegTargetDebug = { rightLegRestTarget.x, rightLegRestTarget.y, rightLegRestTarget.z, { 255, 255, 255} };
+				leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
+				rightHandJointYDebug = rightHandRootYDebug = rightHandPalmYDebug = rightHandPalmZDebug = 0;
+				leftHandJointYDebug = leftHandRootYDebug = leftHandPalmYDebug = leftHandPalmZDebug = 0;
+			}
+
+			return;
+		}
+
 		switch (key)
 		{
 		case 'W': 
@@ -1348,18 +1622,6 @@ namespace Robot
 			attackWithSword = true;
 			animating = ATTACK_WITH_SWORD;
 			attackWithSwordType = attackWithSwordType == SWORD_ATK_HOR ? SWORD_ATK_VER : SWORD_ATK_HOR;
-			break;
-		case 'I':
-			rightHandTargetDebug.y += 0.5;
-			break;
-		case 'K':
-			rightHandTargetDebug.y -= 0.5;
-			break;
-		case 'J':
-			rightHandTargetDebug.z += 0.5;
-			break;
-		case 'L':
-			rightHandTargetDebug.z -= 0.5;
 			break;
 		}
 	}
