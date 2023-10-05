@@ -791,7 +791,7 @@ namespace Robot
 	Point3D attackWithSwordHorStartSwingTarget = { rightHandRestTarget.x, 2, 6 };
 	float attackWithSwordHorStartSwingJointAngle = 50;
 	Point3D attackWithSwordHorSwingTillTarget = { rightHandRestTarget.x, -1, 4 };
-	float attackWithSwordHorSwingTillJointAngle = 30;
+	float attackWithSwordHorSwingTillJointAngle = 45;
 	// when overshoot joint no rotate
 	Point3D attackWithSwordHorSwingOvershootTarget = { rightHandRestTarget.x, -4, -5 };
 
