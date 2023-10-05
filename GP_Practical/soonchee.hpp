@@ -302,147 +302,6 @@ namespace SoonChee
 		}
 	}
 
-	void rect(float size)
-	{
-		//glColor3f(1, 1, 0);
-		glBegin(GL_QUADS);
-		glVertex2f(0, 0);
-		glVertex2f(size, 0.0);
-		glVertex2f(size, size / 2);
-		glVertex2f(0, size / 2);
-		glEnd();
-	}
-
-	void drawShield(float width, float length)
-	{
-		glPushMatrix();
-		glTranslatef(0, 0, length + 0.001);
-
-		glPushMatrix();
-		glTranslatef(0.05, 0.4, 0);
-		glColor3f(1, 1, 1);
-		rect(0.3);
-		glPopMatrix();
-		glPushMatrix();
-		glTranslatef(0.275, 0.4, 0);
-		glRotatef(90, 0, 0, 1);
-		glColor3f(1, 1, 1);
-		rect(0.3);
-		glPopMatrix();
-		glPushMatrix();
-		glTranslatef(0.275, 0.1, 0);
-		glRotatef(90, 0, 0, 1);
-		glColor3f(1, 1, 1);
-		rect(0.3);
-		glPopMatrix();
-		glPopMatrix();
-
-		//glClearColor(1, 1, 1, 1);
-		glColor3f(1, 0.5, 1);
-		glBegin(GL_QUADS);
-		//bottom face 1
-		//glColor3f(1.0, 1.0, 1.0); //red
-		glVertex3f(0.0, 0.0, length);
-		glVertex3f(width, 0.0, length);
-		glVertex3f(width, 0.0, 0.0);
-		glVertex3f(0.0, 0.0, 0.0);
-		
-		//left face 2
-		//glColor3f(1.0, 1.0, 1.0); //green
-		glVertex3f(0.0, 0.0, 0.0);
-		glVertex3f(0.0, width * 2, 0.0);
-		glVertex3f(0.0, width * 2, length);
-		glVertex3f(0.0, 0.0, length);
-
-		//front face 3
-		//glColor3f(1.0, 1.0, 1.0); //blue
-		glVertex3f(0.0, 0.0, length);
-		glVertex3f(0.0, width * 2, length);
-		glVertex3f(width, width * 2, length);
-		glVertex3f(width, 0.0, length);
-
-		//right face 4
-		//glColor3f(1.0, 1.0, 1.0); //yellow
-		glVertex3f(width, 0.0, length);
-		glVertex3f(width, width * 2, length);
-		glVertex3f(width, width * 2, 0.0);
-		glVertex3f(width, 0.0, 0.0);
-
-		//back face 5
-		//glColor3f(1.0, 1.0, 1.0); //cyan
-		glVertex3f(width, 0.0, 0.0);
-		glVertex3f(0.0, 0.0, 0.0);
-		glVertex3f(0.0, width * 2, 0.0);
-		glVertex3f(width, width * 2, 0.0);
-
-		//top face 6
-		//glColor3f(1.0, 1.0, 1.0); //magneta
-		glVertex3f(width, width * 2, 0.0);
-		glVertex3f(0.0, width * 2, 0.0);
-		glVertex3f(0.0, width * 2, length);
-		glVertex3f(width, width * 2, length);
-		glEnd();
-	}
-
-	void drawShieldLine(float width, float length)
-	{
-		//rect(0.2);
-
-		glBegin(GL_LINES);
-		//bottom face 1
-		//glColor3f(1.0, 1.0, 1.0); //red
-		glVertex3f(0.0, 0.0, length);
-		glVertex3f(width, 0.0, length);
-		glVertex3f(width, 0.0, 0.0);
-		glVertex3f(0.0, 0.0, 0.0);
-		glEnd();
-
-		glBegin(GL_LINES);
-		//left face 2
-		//glColor3f(1.0, 1.0, 1.0); //green
-		glVertex3f(0.0, 0.0, 0.0);
-		glVertex3f(0.0, width * 2, 0.0);
-		glVertex3f(0.0, width * 2, length);
-		glVertex3f(0.0, 0.0, length);
-		glEnd();
-
-		glBegin(GL_LINES);
-		//front face 3
-		//glColor3f(1.0, 1.0, 1.0); //blue
-		glVertex3f(0.0, 0.0, length);
-		glVertex3f(0.0, width * 2, length);
-		glVertex3f(width, width * 2, length);
-		glVertex3f(width, 0.0, length);
-		glEnd();
-
-		glBegin(GL_LINES);
-		//right face 4
-		//glColor3f(1.0, 1.0, 1.0); //yellow
-		glVertex3f(width, 0.0, length);
-		glVertex3f(width, width * 2, length);
-		glVertex3f(width, width * 2, 0.0);
-		glVertex3f(width, 0.0, 0.0);
-		glEnd();
-
-		glBegin(GL_LINES);
-		//back face 5
-		//glColor3f(1.0, 1.0, 1.0); //cyan
-		glVertex3f(width, 0.0, 0.0);
-		glVertex3f(0.0, 0.0, 0.0);
-		glVertex3f(0.0, width * 2, 0.0);
-		glVertex3f(width, width * 2, 0.0);
-		glEnd();
-
-		glBegin(GL_LINES);
-		//top face 6
-		//glColor3f(1.0, 1.0, 1.0); //magneta
-		glVertex3f(width, width * 2, 0.0);
-		glVertex3f(0.0, width * 2, 0.0);
-		glVertex3f(0.0, width * 2, length);
-		glVertex3f(width, width * 2, length);
-		glEnd();
-	}
-
 	void sword()
 	{
 	//--------------------------------
@@ -581,118 +440,482 @@ namespace SoonChee
 		glPopMatrix();
 	}
 
+	void rect(float size)
+	{
+		glBegin(GL_QUADS);
+		glVertex2f(0, 0);
+		glVertex2f(size, 0.0);
+		glVertex2f(size, size / 2);
+		glVertex2f(0, size / 2);
+		glEnd();
+	}
+
 	void sheildSide(float width, float length)
+	{
+		glBegin(GL_QUADS);
+		//bottom face 1
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+
+		//left face 2
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width / 4, width / 6, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width / 4, width / 6, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(0.0, 0.0, length);
+
+		//front face 3
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width / 4, width / 6, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width - (width / 4), width / 6, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, 0.0, length);
+
+		//right face 4
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width - (width / 4), width / 6, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, 0.0, 0.0);
+
+		//back face 5
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width / 4, width / 6, 0.0);
+
+		//top face 6
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width / 4, width / 6, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width - (width / 4), width / 6, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width / 4, width / 6, length);
+		glEnd();
+	}
+
+	void sheildSideLine(float width, float length)
 	{
 		glBegin(GL_LINE_LOOP);
 		//bottom face 1
-		glColor3f(1.0, 1.0, 1.0); //red
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(0.0, 0.0, 0.0);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//left face 2
-		glColor3f(1.0, 1.0, 1.0); //green
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width / 4, width / 6, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width / 4, width / 6, length);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(0.0, 0.0, length);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//front face 3
-		glColor3f(1.0, 1.0, 1.0); //blue
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width / 4, width / 6, length);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width - (width / 4), width / 6, length);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(width, 0.0, length);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//right face 4
-		glColor3f(1.0, 1.0, 1.0); //yellow
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width - (width / 4), width / 6, length);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(width, 0.0, 0.0);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//back face 5
-		glColor3f(1.0, 1.0, 1.0); //cyan
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(width / 4, width / 6, 0.0);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//top face 6
-		glColor3f(1.0, 1.0, 1.0); //magneta
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(width / 4, width / 6, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width - (width / 4), width / 6, length);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(width / 4, width / 6, length);
 		glEnd();
 	}
 
 	void hammerBuild(float width, float length)
 	{
+		glBegin(GL_QUADS);
+		//bottom face 1
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+
+		//left face 2
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width / 4, width / 2, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width / 4, width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(0.0, 0.0, length);
+
+		//front face 3
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width / 4, width / 2, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width - (width / 4), width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, 0.0, length);
+
+		//right face 4
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width - (width / 4), width / 2, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width - (width / 4), width / 2, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, 0.0, 0.0);
+
+		//back face 5
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width - (width / 4), width / 2, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width / 4, width / 2, 0.0);
+
+		//top face 6
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width / 4, width / 2, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width - (width / 4), width / 2, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width - (width / 4), width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width / 4, width / 2, length);
+		glEnd();
+	}
+
+	void hammerBuildLine(float width, float length)
+	{
 		glBegin(GL_LINE_LOOP);
 		//bottom face 1
-		glColor3f(1.0, 1.0, 1.0); //red
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(0.0, 0.0, 0.0);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//left face 2
-		glColor3f(1.0, 1.0, 1.0); //green
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width / 4, width / 2, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width / 4, width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(0.0, 0.0, length);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//front face 3
-		glColor3f(1.0, 1.0, 1.0); //blue
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width / 4, width / 2, length);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width - (width / 4), width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(width, 0.0, length);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//right face 4
-		glColor3f(1.0, 1.0, 1.0); //yellow
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width - (width / 4), width / 2, length);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width - (width / 4), width / 2, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(width, 0.0, 0.0);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//back face 5
-		glColor3f(1.0, 1.0, 1.0); //cyan
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width - (width / 4), width / 2, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(width / 4, width / 2, 0.0);
-		glEnd();
 
-		glBegin(GL_LINE_LOOP);
 		//top face 6
-		glColor3f(1.0, 1.0, 1.0); //magneta
+		glTexCoord2f(0.0f, 1.0f);
 		glVertex3f(width / 4, width / 2, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
 		glVertex3f(width - (width / 4), width / 2, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f(width - (width / 4), width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
 		glVertex3f(width / 4, width / 2, length);
 		glEnd();
+	}
+
+	void drawShield(float width, float length)
+	{
+		glPushMatrix();
+		glTranslatef(0, 0, length + 0.001);
+
+		glPushMatrix();
+		glTranslatef(0.05, 0.4, 0);
+		glColor3f(0.5, 0.5, 0.5);
+		rect(0.3);
+		glPopMatrix();
+		glPushMatrix();
+		glTranslatef(0.275, 0.4, 0);
+		glRotatef(90, 0, 0, 1);
+		glColor3f(0.5, 0.5, 0.5);
+		rect(0.3);
+		glPopMatrix();
+		glPushMatrix();
+		glTranslatef(0.275, 0.1, 0);
+		glRotatef(90, 0, 0, 1);
+		glColor3f(0.5, 0.5, 0.5);
+		rect(0.3);
+		glPopMatrix();
+		glPopMatrix();
+
+		//glClearColor(1, 1, 1, 1);
+		//glColor3f(1, 0.5, 1);
+		glBegin(GL_QUADS);
+		//bottom face 1
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+
+		//left face 2
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(0.0, width * 2, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(0.0, width * 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(0.0, 0.0, length);
+
+		//front face 3
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(0.0, width * 2, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width, width * 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, 0.0, length);
+
+		//right face 4
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width, width * 2, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width, width * 2, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, 0.0, 0.0);
+
+		//back face 5
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(0.0, width * 2, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, width * 2, 0.0);
+
+		//top face 6
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width, width * 2, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(0.0, width * 2, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(0.0, width * 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, width * 2, length);
+		glEnd();
+	}
+
+	void drawShieldLine(float width, float length)
+	{
+		glLineWidth(2);
+
+		glBegin(GL_LINES);
+		//bottom face 1
+		//glColor3f(1.0, 1.0, 1.0); //red
+		glVertex3f(0.0, 0.0, length);
+		glVertex3f(width, 0.0, length);
+		glVertex3f(width, 0.0, 0.0);
+		glVertex3f(0.0, 0.0, 0.0);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//left face 2
+		//glColor3f(1.0, 1.0, 1.0); //green
+		glVertex3f(0.0, 0.0, 0.0);
+		glVertex3f(0.0, width * 2, 0.0);
+		glVertex3f(0.0, width * 2, length);
+		glVertex3f(0.0, 0.0, length);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//front face 3
+		//glColor3f(1.0, 1.0, 1.0); //blue
+		glVertex3f(0.0, 0.0, length);
+		glVertex3f(0.0, width * 2, length);
+		glVertex3f(width, width * 2, length);
+		glVertex3f(width, 0.0, length);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//right face 4
+		//glColor3f(1.0, 1.0, 1.0); //yellow
+		glVertex3f(width, 0.0, length);
+		glVertex3f(width, width * 2, length);
+		glVertex3f(width, width * 2, 0.0);
+		glVertex3f(width, 0.0, 0.0);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//back face 5
+		//glColor3f(1.0, 1.0, 1.0); //cyan
+		glVertex3f(width, 0.0, 0.0);
+		glVertex3f(0.0, 0.0, 0.0);
+		glVertex3f(0.0, width * 2, 0.0);
+		glVertex3f(width, width * 2, 0.0);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//top face 6
+		//glColor3f(1.0, 1.0, 1.0); //magneta
+		glVertex3f(width, width * 2, 0.0);
+		glVertex3f(0.0, width * 2, 0.0);
+		glVertex3f(0.0, width * 2, length);
+		glVertex3f(width, width * 2, length);
+		glEnd();
+	}
+
+	void shield()
+	{
+		glPushMatrix();
+		glTranslatef(-0.2, 0, 0);
+		//shield
+		glPushMatrix();
+		glTranslatef(0, -0.5, 0);
+		//glColor3f(1, 1,1);
+		GLuint textureArr[1];
+		textureArr[0] = loadTexture("shield.bmp");
+		drawShield(0.4, 0.1);
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		glColor3f(1, 1, 1);
+		drawShieldLine(0.4, 0.1);
+		glPopMatrix();
+
+		//outer
+		glPushMatrix();
+		glTranslatef(0, 0.3, 0);
+		textureArr[0] = loadTexture("shield.bmp");
+		hammerBuild(0.4, 0.1);
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		glColor3f(1, 1, 1);
+		hammerBuildLine(0.4, 0.1);
+		glPopMatrix();
+		glPushMatrix();
+		glRotatef(180, 1, 0, 0);
+		glTranslatef(0, 0.5, -0.1);
+		textureArr[0] = loadTexture("shield.bmp");
+		hammerBuild(0.4, 0.1);
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		glColor3f(1, 1, 1);
+		hammerBuildLine(0.4, 0.1);
+		glPopMatrix();
+		glPushMatrix();
+		glRotatef(90, 0, 0, -1);
+		glTranslatef(-0.3, 0.4, 0);
+		textureArr[0] = loadTexture("shield.bmp");
+		sheildSide(0.8, 0.1);
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		glColor3f(1, 1, 1);
+		sheildSideLine(0.8, 0.1);
+		glPopMatrix();
+		glPushMatrix();
+		glRotatef(90, 0, 0, 1);
+		glTranslatef(-0.5, 0, 0);
+		textureArr[0] = loadTexture("shield.bmp");
+		sheildSide(0.8, 0.1);
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		glColor3f(1, 1, 1);
+		sheildSideLine(0.8, 0.1);
+		glPopMatrix();
+		glPopMatrix();
 	}
 
 	void hammer()
@@ -715,37 +938,4 @@ namespace SoonChee
 		glPopMatrix();
 	}
 
-	void shield()
-	{
-		//shield
-		glPushMatrix();
-		glTranslatef(0, -0.5, 0);
-		glColor3f(1, 0.5, 0.5);
-		drawShield(0.4, 0.1);
-		glColor3f(1, 1, 1);
-		drawShieldLine(0.4, 0.1);
-		glPopMatrix();
-		//outer
-		glPushMatrix();
-		glTranslatef(0, 0.3, 0);
-		hammerBuild(0.4, 0.1);
-		glPopMatrix();
-		glPushMatrix();
-		glRotatef(180, 1, 0, 0);
-		glTranslatef(0, 0.5, -0.1);
-		hammerBuild(0.4, 0.1);
-		glPopMatrix();
-		glPushMatrix();
-		glRotatef(90, 0, 0, -1);
-		glTranslatef(-0.3, 0.4, 0);
-		sheildSide(0.8, 0.1);
-		glPopMatrix();
-		glPushMatrix();
-		glRotatef(90, 0, 0, 1);
-		glTranslatef(-0.5, 0, 0);
-		sheildSide(0.8, 0.1);
-		glPopMatrix();
-	}
-
-	
 }

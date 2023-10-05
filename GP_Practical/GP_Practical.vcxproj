@@ -142,6 +142,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\Desktop\Assignment\Assignment\metal.bmp" />
+    <Image Include="..\..\..\Desktop\Assignment\Assignment\shield.bmp" />
     <Image Include="..\..\..\Desktop\Assignment\Assignment\wood.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
