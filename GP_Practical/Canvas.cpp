@@ -829,7 +829,7 @@ Canvas& Canvas::cylinder(Point3D center, float baseRadius, float topRadius, floa
         if (topRadius > 0)
         {
             pushMatrix();
-            translate(0, 0, height / depth);
+            translate(0, 0, height);
 			circle({ 0, 0, center.c }, topRadius, 6.0 / 180 * PI, 0, 2 * PI, slices);
             popMatrix();
         }
