@@ -12,19 +12,31 @@ namespace SoonChee
 {
 	void drawPyramid(float size)
 	{
-		glBegin(GL_LINE_LOOP);
-		glVertex3f(0.0, 0.0, size / 10.0);
-		glVertex3f(size / 2.0, size / 2.0, size / 20.0);
-		glVertex3f(size, 0.0, size / 10.0);
-		glVertex3f(size / 2.0, size / 2.0, size / 20.0);
-		glVertex3f(size, 0.0, 0.0);
-		glVertex3f(size / 2.0, size / 2.0, size / 20.0);
-		glVertex3f(0.0, 0.0, 0.0);
-		glVertex3f(size / 2.0, size / 2.0, size / 20.0);
+		glBegin(GL_QUADS);
 		glVertex3f(0.0, 0.0, size / 10.0);
 		glVertex3f(size, 0.0, size / 10.0);
 		glVertex3f(size, 0.0, 0.0);
 		glVertex3f(0.0, 0.0, 0.0);
+		glEnd();
+		glBegin(GL_TRIANGLES);
+		glVertex3f(0.0, 0.0, size / 10.0);
+		glVertex3f(size / 2.0, size / 2.0, size / 20.0);
+		glVertex3f(size, 0.0, size / 10.0);
+		glEnd();
+		glBegin(GL_TRIANGLES);
+		glVertex3f(size, 0.0, size / 10.0);
+		glVertex3f(size / 2.0, size / 2.0, size / 20.0);
+		glVertex3f(size, 0.0, 0.0);
+		glEnd();
+		glBegin(GL_TRIANGLES);
+		glVertex3f(size, 0.0, 0.0);
+		glVertex3f(size / 2.0, size / 2.0, size / 20.0);
+		glVertex3f(0.0, 0.0, 0.0);
+		glEnd();
+		glBegin(GL_TRIANGLES);
+		glVertex3f(0.0, 0.0, 0.0);
+		glVertex3f(size / 2.0, size / 2.0, size / 20.0);
+		glVertex3f(0.0, 0.0, size / 10.0);
 		glEnd();
 	}
 
@@ -220,9 +232,23 @@ namespace SoonChee
 		glPushMatrix();
 		glTranslatef(0, 0, length + 0.001);
 
-		
+		glPushMatrix();
+		glTranslatef(0.05, 0.4, 0);
 		glColor3f(1, 1, 1);
-		rect(0.2);
+		rect(0.3);
+		glPopMatrix();
+		glPushMatrix();
+		glTranslatef(0.275, 0.4, 0);
+		glRotatef(90, 0, 0, 1);
+		glColor3f(1, 1, 1);
+		rect(0.3);
+		glPopMatrix();
+		glPushMatrix();
+		glTranslatef(0.275, 0.1, 0);
+		glRotatef(90, 0, 0, 1);
+		glColor3f(1, 1, 1);
+		rect(0.3);
+		glPopMatrix();
 		glPopMatrix();
 
 		//glClearColor(1, 1, 1, 1);
@@ -392,28 +418,28 @@ namespace SoonChee
 		//sword left design - cylinder ii
 		glPushMatrix();;
 		glColor3f(1, 0, 1);
-		glTranslatef(-0.17, -0.12, -0.022);
-		drawCylinder(0.03, 0.04);
+		glTranslatef(-0.18, -0.12, -0.021);
+		drawCylinder(0.031, 0.06);
 		glPopMatrix();
 
 		//sword left design - cylinder face
 		glPushMatrix();
-		glTranslatef(-0.17, -0.118, 0.025);
+		glTranslatef(-0.17, -0.12, 0.025);
 		glColor3f(0, 1, 1);
-		face(0.029);
+		face(0.031);
 		glPopMatrix();
 
 		//sword left design - cylinder face
 		glPushMatrix();
-		glTranslatef(-0.17, -0.118, -0.025);
+		glTranslatef(-0.17, -0.12, -0.025);
 		glColor3f(1, 1, 0);
-		face(0.029);
+		face(0.031);
 		glPopMatrix();
 
 		//sword right design - cone
 		glPushMatrix();
 		glRotatef(-90, 0, 1, 0);
-		glTranslatef(-0.009, -0.12, -0.22);
+		glTranslatef(0.009, -0.12, -0.22);
 		glColor3f(1, 1, 0);
 		drawCone(0.045, 0.05);
 		glPopMatrix();
@@ -429,22 +455,22 @@ namespace SoonChee
 		//sword right design - cylinder ii
 		glPushMatrix();;
 		glColor3f(1, 0, 1);
-		glTranslatef(0.35, -0.12, -0.022);
-		drawCylinder(0.03, 0.04);
+		glTranslatef(0.36, -0.12, -0.021);
+		drawCylinder(0.03, 0.06);
 		glPopMatrix();
 
 		//sword right design - cylinder face
 		glPushMatrix();
-		glTranslatef(0.35, -0.118, 0.025);
+		glTranslatef(0.34, -0.12, 0.025);
 		glColor3f(0, 1, 1);
-		face(0.029);
+		face(0.031);
 		glPopMatrix();
 
 		//sword right design - cylinder face
 		glPushMatrix();
-		glTranslatef(0.35, -0.118, -0.025);
+		glTranslatef(0.34, -0.12, -0.025);
 		glColor3f(1, 1, 0);
-		face(0.029);
+		face(0.031);
 		glPopMatrix();
 
 		//sword handle
@@ -472,18 +498,64 @@ namespace SoonChee
 		glPopMatrix();
 	}
 
-	void shield()
+	void sheildSide(float width, float length)
 	{
-		glPushMatrix();
-		glTranslatef(-0.2, -0.4, 0);
-		glColor3f(1, 0.5, 0.5);
-		drawShield(0.4, 0.05);
-		glColor3f(1, 1, 1);
-		drawShieldLine(0.4, 0.05);
-		glPopMatrix();
+		glBegin(GL_LINE_LOOP);
+		//bottom face 1
+		glColor3f(1.0, 1.0, 1.0); //red
+		glVertex3f(0.0, 0.0, length);
+		glVertex3f(width, 0.0, length);
+		glVertex3f(width, 0.0, 0.0);
+		glVertex3f(0.0, 0.0, 0.0);
+		glEnd();
+
+		glBegin(GL_LINE_LOOP);
+		//left face 2
+		glColor3f(1.0, 1.0, 1.0); //green
+		glVertex3f(0.0, 0.0, 0.0);
+		glVertex3f(width / 4, width / 6, 0.0);
+		glVertex3f(width / 4, width / 6, length);
+		glVertex3f(0.0, 0.0, length);
+		glEnd();
+
+		glBegin(GL_LINE_LOOP);
+		//front face 3
+		glColor3f(1.0, 1.0, 1.0); //blue
+		glVertex3f(0.0, 0.0, length);
+		glVertex3f(width / 4, width / 6, length);
+		glVertex3f(width - (width / 4), width / 6, length);
+		glVertex3f(width, 0.0, length);
+		glEnd();
+
+		glBegin(GL_LINE_LOOP);
+		//right face 4
+		glColor3f(1.0, 1.0, 1.0); //yellow
+		glVertex3f(width, 0.0, length);
+		glVertex3f(width - (width / 4), width / 6, length);
+		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glVertex3f(width, 0.0, 0.0);
+		glEnd();
+
+		glBegin(GL_LINE_LOOP);
+		//back face 5
+		glColor3f(1.0, 1.0, 1.0); //cyan
+		glVertex3f(0.0, 0.0, 0.0);
+		glVertex3f(width, 0.0, 0.0);
+		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glVertex3f(width / 4, width / 6, 0.0);
+		glEnd();
+
+		glBegin(GL_LINE_LOOP);
+		//top face 6
+		glColor3f(1.0, 1.0, 1.0); //magneta
+		glVertex3f(width / 4, width / 6, 0.0);
+		glVertex3f(width - (width / 4), width / 6, 0.0);
+		glVertex3f(width - (width / 4), width / 6, length);
+		glVertex3f(width / 4, width / 6, length);
+		glEnd();
 	}
 
-	void hammer(float width, float length)
+	void hammerBuild(float width, float length)
 	{
 		glBegin(GL_LINE_LOOP);
 		//bottom face 1
@@ -545,12 +617,12 @@ namespace SoonChee
 		drawSqu(0.4, 0.2);
 		glPushMatrix();
 		glRotatef(90, 0, 0, 1);
-		hammer(0.2, 0.2);
+		hammerBuild(0.2, 0.2);
 		glPopMatrix();
 		glPushMatrix();
 		glRotatef(-90, 0, 0, 1);
 		glTranslatef(-0.2, 0.4, 0);
-		hammer(0.2, 0.2);
+		hammerBuild(0.2, 0.2);
 		glPopMatrix();
 		glPushMatrix();
 		glRotatef(90, 1, 0, 0);
@@ -559,4 +631,38 @@ namespace SoonChee
 		drawCylinder(0.05, 0.3);
 		glPopMatrix();
 	}
+
+	void shield()
+	{
+		//shield
+		glPushMatrix();
+		glTranslatef(0, -0.5, 0);
+		glColor3f(1, 0.5, 0.5);
+		drawShield(0.4, 0.1);
+		glColor3f(1, 1, 1);
+		drawShieldLine(0.4, 0.1);
+		glPopMatrix();
+		//outer
+		glPushMatrix();
+		glTranslatef(0, 0.3, 0);
+		hammerBuild(0.4, 0.1);
+		glPopMatrix();
+		glPushMatrix();
+		glRotatef(180, 1, 0, 0);
+		glTranslatef(0, 0.5, -0.1);
+		hammerBuild(0.4, 0.1);
+		glPopMatrix();
+		glPushMatrix();
+		glRotatef(90, 0, 0, -1);
+		glTranslatef(-0.3, 0.4, 0);
+		sheildSide(0.8, 0.1);
+		glPopMatrix();
+		glPushMatrix();
+		glRotatef(90, 0, 0, 1);
+		glTranslatef(-0.5, 0, 0);
+		sheildSide(0.8, 0.1);
+		glPopMatrix();
+	}
+
+	
 }
