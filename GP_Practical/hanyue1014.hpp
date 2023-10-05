@@ -13,8 +13,9 @@ namespace Robot
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
 	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR };
 	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_SWING_OVERSHOOT, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
-	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ANIMATING_NONE };
+	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, CHARGE_KAMEKAMEHA, ANIMATING_NONE };
 	enum EditModeEditTargets { EDIT_LEFT_HAND, EDIT_RIGHT_HAND, EDIT_LEFT_LEG, EDIT_RIGHT_LEG };
+	enum KamekamehaChargeProgress { KKH_NONE, KKH_LOW, KKH_MEDIUM, KKH_HIGH, KKH_SHOOT, KKH_SHOOTING };
 
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
@@ -706,6 +707,19 @@ namespace Robot
 	Point3D rightHandCurrentTarget = rightHandRestTarget;
 	bool rightHandShouldGrip = false;
 	bool leftHandShouldGrip = false;
+	GripType rightHandGripType = GRIP_KAMEKAMEHA;
+	GripType leftHandGripType = GRIP_KAMEKAMEHA;
+
+	// the "customization feature" to allow the "director" to customize every hand and leg movement
+	bool inEditMode = false; // extreme customization, TAB to toggle, FUTURE_TODO: add finger grip angle customization
+	EditModeEditTargets editModeTarget = EDIT_RIGHT_HAND;
+	// for inverse kinematic customizations
+	Point3D rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y, rightHandRestTarget.z, { 255, 255, 255} };
+	Point3D leftHandTargetDebug = { leftHandRestTarget.x, leftHandRestTarget.y, leftHandRestTarget.z, { 255, 255, 255} };
+	Point3D rightLegTargetDebug = { rightLegRestTarget.x, rightLegRestTarget.y, rightLegRestTarget.z, { 255, 255, 255} };
+	Point3D leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
+	float rightHandJointYDebug = 0, rightHandRootYDebug = 0, rightHandPalmYDebug = 0, rightHandPalmZDebug = 0;
+	float leftHandJointYDebug = 0, leftHandRootYDebug = 0, leftHandPalmYDebug = 0, leftHandPalmZDebug = 0;
 
 	bool isWalking = false;
 	float walkingTweenProgress = 0;
@@ -787,16 +801,26 @@ namespace Robot
 	float attackWithSwordTween = 0;
 	NowAnimating animating = ANIMATING_NONE; // if is animating other stuff, cannot walk
 
-	// the "customization feature" to allow the "director" to customize every hand and leg movement
-	bool inEditMode = false; // extreme customization, TAB to toggle, FUTURE_TODO: add finger grip angle customization
-	EditModeEditTargets editModeTarget = EDIT_RIGHT_HAND;
-	// for inverse kinematic customizations
-	Point3D rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y, rightHandRestTarget.z, { 255, 255, 255} };
-	Point3D leftHandTargetDebug = { leftHandRestTarget.x, leftHandRestTarget.y, leftHandRestTarget.z, { 255, 255, 255} };
-	Point3D rightLegTargetDebug = { rightLegRestTarget.x, rightLegRestTarget.y, rightLegRestTarget.z, { 255, 255, 255} };
-	Point3D leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
-	float rightHandJointYDebug = 0, rightHandRootYDebug = 0, rightHandPalmYDebug = 0, rightHandPalmZDebug = 0;
-	float leftHandJointYDebug = 0, leftHandRootYDebug = 0, leftHandPalmYDebug = 0, leftHandPalmZDebug = 0;
+	Point3D rightkkhChargeTarget = { rightHandRestTarget.x, 1, 5 };
+	Point3D leftkkhChargeTarget = { leftHandRestTarget.x, 1, 5 };
+	// for use tween back
+	Point3D rightkkhLastChargeTarget = rightHandRestTarget;
+	Point3D leftkkhLastChargeTarget = leftHandRestTarget;
+	KamekamehaChargeProgress kkhChargeState = KKH_NONE;
+	Color kkhOriBola = { 0, 0, 0 };
+	Color kkhLowBola = { 0, 255, 0};
+	Color kkhMedBola = { 255, 255, 0 };
+	Color kkhHighBola = { 255, 0, 0 };
+	Color kkhPrevColor;
+	Color kkhBolaCurrentColor;
+	float rightkkhPrevRootRotation = 0, leftkkhPrevRootRotation = 0;
+	float kkhOriRotateRoot = 30, kkhLowRotateRoot = 25, kkhMedRotateRoot = 20, kkhHighRotateRoot = 15;
+	Transform kkhBolaScale; // for use when make the bola slowly get bigger
+	Transform kkhBolaPrevScale;
+	float kkhBeamLength = 10, kkhPrevBeamLength = 0;
+	float kkhTopRad = 3, kkhPrevTopRad = 0;
+	bool kamekamehaCharging = false;
+	float kkhTween = 0;
 
 	void main()
 	{
@@ -997,6 +1021,7 @@ namespace Robot
 				if (!rightHand.isGripping())
 				{
 					rightHandShouldGrip = true;
+					rightHandGripType = GRIP_FULL;
 				}
 				else if (rightHand.isGripping() && (rightHandCurrentTarget != rightHandRestTarget || rightHandPalmYRotation != rightHandPalmRestYRotation)) // if finally gripped then can move back to rest position
 				{
@@ -1275,6 +1300,196 @@ namespace Robot
 			animating = ANIMATING_NONE;
 		}
 
+		// kamekameha, only sword not equipped can activate
+		if (kamekamehaCharging && swordState != SWORD_EQUIPPED)
+		{
+			if (kkhChargeState == KKH_NONE)
+			{
+				// move hands to target position
+				rightkkhLastChargeTarget = rightHandCurrentTarget = tween(rightHandRestTarget, rightkkhChargeTarget, kkhTween += 0.05);
+				leftkkhLastChargeTarget = leftHandCurrentTarget = tween(leftHandRestTarget, leftkkhChargeTarget, kkhTween);
+				rightkkhPrevRootRotation = rightHandRootYRotation = tween(rightHandRootRestYRotation, -kkhOriRotateRoot, kkhTween);
+				leftkkhPrevRootRotation = leftHandRootYRotation = tween(leftHandRootRestYRotation, kkhOriRotateRoot, kkhTween);
+				if (kkhTween >= 1)
+				{
+					kkhTween = 0;
+					rightHandCurrentTarget = rightkkhChargeTarget;
+					leftHandCurrentTarget = leftkkhChargeTarget;
+					rightkkhPrevRootRotation = rightHandRootYRotation = -kkhOriRotateRoot;
+					leftkkhPrevRootRotation = leftHandRootYRotation = kkhOriRotateRoot;
+					kkhChargeState = KKH_LOW;
+				}
+			}
+
+			// charge from ori to low
+			if (kkhChargeState == KKH_LOW)
+			{
+				kkhPrevColor = kkhBolaCurrentColor = tween(kkhOriBola, kkhLowBola, kkhTween += 0.005);
+				kkhBolaPrevScale.scaleX = kkhBolaPrevScale.scaleY = kkhBolaPrevScale.scaleZ = 
+					kkhBolaScale.scaleX = kkhBolaScale.scaleY = kkhBolaScale.scaleZ = tween(0.2, 0.7, kkhTween); // noneed additional open var gua
+				rightkkhPrevRootRotation = rightHandRootYRotation = tween(-kkhOriRotateRoot, -kkhLowRotateRoot, kkhTween);
+				leftkkhPrevRootRotation = leftHandRootYRotation = tween(kkhOriRotateRoot, kkhLowRotateRoot, kkhTween);
+
+				if (kkhTween >= 1)
+				{
+					kkhTween = 0;
+					kkhPrevColor = kkhBolaCurrentColor = kkhLowBola;
+					kkhBolaPrevScale.scaleX = kkhBolaPrevScale.scaleY = kkhBolaPrevScale.scaleZ = 
+						kkhBolaScale.scaleX = kkhBolaScale.scaleY = kkhBolaScale.scaleZ = 0.7; // noneed additional open var gua
+					rightkkhPrevRootRotation = rightHandRootYRotation = -kkhLowRotateRoot;
+					leftkkhPrevRootRotation = leftHandRootYRotation = kkhLowRotateRoot;
+					kkhChargeState = KKH_MEDIUM;
+				}
+			}
+
+			// charge from low to med
+			if (kkhChargeState == KKH_MEDIUM)
+			{
+				kkhPrevColor = kkhBolaCurrentColor = tween(kkhLowBola, kkhMedBola, kkhTween += 0.005);
+				kkhBolaPrevScale.scaleX = kkhBolaPrevScale.scaleY = kkhBolaPrevScale.scaleZ =
+					kkhBolaScale.scaleX = kkhBolaScale.scaleY = kkhBolaScale.scaleZ = tween(0.7, 1.0, kkhTween); // noneed additional open var gua
+				rightkkhPrevRootRotation = rightHandRootYRotation = tween(-kkhLowRotateRoot, -kkhMedRotateRoot, kkhTween);
+				leftkkhPrevRootRotation = leftHandRootYRotation = tween(kkhLowRotateRoot, kkhMedRotateRoot, kkhTween);
+
+				if (kkhTween >= 1)
+				{
+					kkhTween = 0;
+					kkhPrevColor = kkhBolaCurrentColor = kkhMedBola;
+					kkhBolaPrevScale.scaleX = kkhBolaPrevScale.scaleY = kkhBolaPrevScale.scaleZ =
+						kkhBolaScale.scaleX = kkhBolaScale.scaleY = kkhBolaScale.scaleZ = 1.0; // noneed additional open var gua
+					rightkkhPrevRootRotation = rightHandRootYRotation = -kkhMedRotateRoot;
+					leftkkhPrevRootRotation = leftHandRootYRotation = kkhMedRotateRoot;
+					kkhChargeState = KKH_HIGH;
+				}
+			}
+
+			// charge ffrom med to high
+			if (kkhChargeState == KKH_HIGH)
+			{
+				kkhPrevColor = kkhBolaCurrentColor = tween(kkhMedBola, kkhHighBola, kkhTween += 0.005);
+				kkhBolaPrevScale.scaleX = kkhBolaPrevScale.scaleY = kkhBolaPrevScale.scaleZ =
+					kkhBolaScale.scaleX = kkhBolaScale.scaleY = kkhBolaScale.scaleZ = tween(1.0, 1.2, kkhTween); // noneed additional open var gua
+				rightkkhPrevRootRotation = rightHandRootYRotation = tween(-kkhMedRotateRoot, -kkhHighRotateRoot, kkhTween);
+				leftkkhPrevRootRotation = leftHandRootYRotation = tween(kkhMedRotateRoot, kkhHighRotateRoot, kkhTween);
+
+				if (kkhTween >= 1)
+				{
+					kkhTween = 0;
+					kkhPrevColor = kkhBolaCurrentColor = kkhHighBola;
+					kkhBolaPrevScale.scaleX = kkhBolaPrevScale.scaleY = kkhBolaPrevScale.scaleZ =
+						kkhBolaScale.scaleX = kkhBolaScale.scaleY = kkhBolaScale.scaleZ = 1.2; // noneed additional open var gua
+					rightkkhPrevRootRotation = rightHandRootYRotation = -kkhHighRotateRoot;
+					leftkkhPrevRootRotation = leftHandRootYRotation = kkhHighRotateRoot;
+					kkhChargeState = KKH_SHOOT;
+				}
+			}
+
+			if (kkhChargeState == KKH_SHOOT)
+			{
+				kkhPrevBeamLength = kkhBeamLength = tween(0, 15, kkhTween += 0.005);
+				kkhPrevTopRad = kkhTopRad = tween(0, 4, kkhTween);
+
+				if (kkhTween >= 1)
+				{
+					kkhTween = 0;
+					kkhPrevBeamLength = kkhBeamLength = 15;
+					kkhPrevTopRad = kkhTopRad = 4;
+					kkhChargeState = KKH_SHOOTING; // need one additional state so this condition won't repeat
+				}
+			}
+		}
+		else if (kamekamehaCharging && swordState == SWORD_EQUIPPED)
+		{
+			kamekamehaCharging = false;
+			animating = ANIMATING_NONE;
+		}
+
+		// stop charging kamekameha
+		if (!kamekamehaCharging && animating == CHARGE_KAMEKAMEHA)
+		{
+			if (kkhChargeState == KKH_SHOOTING)
+			{
+				// go to other state from the additional state
+				kkhChargeState = KKH_SHOOT;
+			}
+
+			if (kkhChargeState == KKH_SHOOT)
+			{
+				kkhBeamLength = tween(kkhPrevBeamLength, 0, kkhTween += 0.005);
+				kkhTopRad = tween(kkhPrevTopRad, 0, kkhTween);
+
+				if (kkhTween >= 1)
+				{
+					kkhTween = 0;
+					kkhBeamLength = 0;
+					kkhTopRad = 0;
+					kkhChargeState = KKH_HIGH; // need one additional state so this condition won't repeat
+				}
+			}
+
+			if (kkhChargeState != KKH_NONE && kkhChargeState != KKH_SHOOT && kkhChargeState != KKH_SHOOTING)
+			{
+				// xian make it no bola
+				kkhBolaCurrentColor = tween(kkhPrevColor, kkhOriBola, kkhTween += 0.005);
+				if (kkhBolaPrevScale.scaleX > 0.2)
+					kkhBolaScale.scaleX = kkhBolaScale.scaleY = kkhBolaScale.scaleZ = tween(kkhBolaPrevScale.scaleX, 0.2, kkhTween); // luckily all same scale
+				// rotate in first, when wan rest ka rotate back out
+				rightHandRootYRotation = tween(rightkkhPrevRootRotation, -kkhOriRotateRoot, kkhTween);
+				leftHandRootYRotation = tween(leftkkhPrevRootRotation, kkhOriRotateRoot, kkhTween);
+
+				if (kkhTween >= 1)
+				{
+					kkhTween = 0;
+					kkhChargeState = KKH_NONE;
+					kkhBolaCurrentColor = kkhOriBola;
+					rightHandRootYRotation = rightHandRootRestYRotation;
+					leftHandRootYRotation = leftHandRootRestYRotation;
+					kkhBolaScale = Transform(); // auto set back all scale = 0 ki
+				}
+			}
+			if (kkhChargeState == KKH_NONE)
+			{
+				// move hands to target position
+				rightHandCurrentTarget = tween(rightkkhLastChargeTarget, rightHandRestTarget, kkhTween += 0.05);
+				leftHandCurrentTarget = tween(leftkkhLastChargeTarget, leftHandRestTarget, kkhTween);
+				rightHandRootYRotation = tween(rightkkhPrevRootRotation, rightHandRootRestYRotation, kkhTween);
+				leftHandRootYRotation = tween(leftkkhPrevRootRotation, leftHandRootRestYRotation, kkhTween);
+				if (kkhTween >= 1)
+				{
+					kkhTween = 0;
+					rightHandCurrentTarget = rightHandRestTarget;
+					leftHandCurrentTarget = leftHandRestTarget;
+					rightHandRootYRotation = rightHandRootRestYRotation;
+					leftHandRootYRotation = leftHandRootRestYRotation;
+					animating = ANIMATING_NONE;
+				}
+			}
+		}
+
+		// kkh bolas
+		if (kkhChargeState != KKH_NONE && animating == CHARGE_KAMEKAMEHA)
+		{
+			cv
+				.pushMatrix()
+				.translate(0, 0, 5)
+				.scale(kkhBolaScale.scaleX, kkhBolaScale.scaleY, kkhBolaScale.scaleZ)
+				.sphere({ 0, 0, 0, kkhBolaCurrentColor }, 1)
+				.popMatrix()
+				;
+		}
+
+		// beam to shoot when kkh charge complete
+		if (kkhChargeState == KKH_SHOOT || kkhChargeState == KKH_SHOOTING)
+		{
+			// beam same color as bola
+			cv
+				.pushMatrix()
+				.translate(0, 0, 4)
+				.cylinder({0, 0, 0}, 1, kkhTopRad, kkhBeamLength)
+				.popMatrix()
+				;
+		}
+
 		// arm joint to body
 		// right
 		cv
@@ -1331,7 +1546,7 @@ namespace Robot
 			rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation, rightHandPalmYRotation, rightHandPalmZRotation);
 		}
 		//rightHand.forceYRotation(debugRootY, debugJointY);
-		rightHand.grip(rightHandShouldGrip);
+		rightHand.grip(rightHandShouldGrip, rightHandGripType);
 		rightHand.draw();
 
 		if (inEditMode) // rn edit mode only affects inverse kinematic targets
@@ -1345,7 +1560,7 @@ namespace Robot
 			leftHand.solveIK(leftHandCurrentTarget);
 			leftHand.forceYRotation(leftHandRootYRotation, leftHandJointYRotation, leftHandPalmYRotation, leftHandPalmZRotation);
 		}
-		leftHand.grip(leftHandShouldGrip);
+		leftHand.grip(leftHandShouldGrip, leftHandGripType);
 		leftHand.draw();
 
 		cv.popMatrix();
@@ -1404,7 +1619,7 @@ namespace Robot
 
 	void handleKeyDownEvent(WPARAM key)
 	{
-		if (key == VK_TAB)
+		if (key == VK_TAB) // editor power ACTIVATE
 		{
 			inEditMode = !inEditMode;
 			return;
@@ -1623,6 +1838,12 @@ namespace Robot
 			animating = ATTACK_WITH_SWORD;
 			attackWithSwordType = attackWithSwordType == SWORD_ATK_HOR ? SWORD_ATK_VER : SWORD_ATK_HOR;
 			break;
+		case 'C':
+			if (animating != ANIMATING_NONE) // only ntg animating only can attack with sword
+				break;
+			kamekamehaCharging = true;
+			animating = CHARGE_KAMEKAMEHA;
+			break;
 		}
 	}
 
@@ -1632,6 +1853,11 @@ namespace Robot
 		{
 		case 'W':
 			isWalking = false;
+			break;
+		case 'C':
+			kamekamehaCharging = false;
+			// here reset the tween better
+			kkhTween = 0;
 			break;
 		}
 	}
