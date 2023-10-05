@@ -918,23 +918,126 @@ namespace SoonChee
 		glPopMatrix();
 	}
 
+	void drawSquLine(float width, float length)
+	{
+		glBegin(GL_LINES);
+		//bottom face 1
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//left face 2
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(0.0, width / 2, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(0.0, width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(0.0, 0.0, length);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//front face 3
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(0.0, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(0.0, width / 2, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width, width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, 0.0, length);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//right face 4
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width, 0.0, length);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(width, width / 2, length);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(width, width / 2, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//back face 5
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width, 0.0, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(0.0, width / 2, 0.0);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, width / 2, 0.0);
+		glEnd();
+
+		glBegin(GL_LINES);
+		//top face 6
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(width, width / 2, 0.0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(0.0, width / 2, 0.0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(0.0, width / 2, length);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(width, width / 2, length);
+		glEnd();
+	}
+
 	void hammer()
 	{
+		glPushMatrix();
+		glTranslatef(-0.2, 0, 0);
+		GLuint textureArr[2];
+		textureArr[0] = loadTexture("shield.bmp");
+		glColor3f(0.44, 0.44, 0.43);
 		drawSqu(0.4, 0.2);
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		drawSquLine(0.4, 0.2);
 		glPushMatrix();
 		glRotatef(90, 0, 0, 1);
+		textureArr[0] = loadTexture("shield.bmp");
+		glColor3f(0.44, 0.44, 0.43);
 		hammerBuild(0.2, 0.2);
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		hammerBuildLine(0.2, 0.2);
 		glPopMatrix();
 		glPushMatrix();
 		glRotatef(-90, 0, 0, 1);
 		glTranslatef(-0.2, 0.4, 0);
+		textureArr[0] = loadTexture("shield.bmp");
+		glColor3f(0.44, 0.44, 0.43);
 		hammerBuild(0.2, 0.2);
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		hammerBuildLine(0.2, 0.2);
 		glPopMatrix();
 		glPushMatrix();
 		glRotatef(90, 1, 0, 0);
 		glTranslatef(0.2, 0.1, 0);
-		glColor3f(1, 1, 1);
+		textureArr[1] = loadCylinderTexture("wood.bmp");
+		glColor3f(0.79, 0.64, 0.45);
 		drawCylinder(0.05, 0.3);
+		glDeleteTextures(1, &textureArr[1]);
+		glDisable(GL_TEXTURE_2D);
+		glPopMatrix();
+		glPushMatrix();
+		glRotatef(90, 1, 0, 0);
+		glTranslatef(0.2, 0.1, 0.3);
+		glColor3f(0.79, 0.64, 0.45);
+		face(0.05);
+		glPopMatrix();
 		glPopMatrix();
 	}
 
