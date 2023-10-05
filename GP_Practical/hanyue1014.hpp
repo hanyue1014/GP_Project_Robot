@@ -11,6 +11,7 @@ namespace Robot
 	enum Position { POSITION_LEFT, POSITION_RIGHT };
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
 	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR }; 
+	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
 	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ANIMATING_NONE };
 
 	// no need create canvas everytime
@@ -750,14 +751,20 @@ namespace Robot
 	bool setSwordEquip = false;
 	float swordTween = 0;
 
-	Point3D rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y + 9, rightHandRestTarget.z + 8, { 255, 255, 255} };
 	int attackWithSwordTargetIndex = 0;
-	Point3D attackWithSwordTargets[] = {
-		rightHandRestTarget, // temp
-	};
+	Point3D attackWithSwordVerStartSwingTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 9.0f, rightHandRestTarget.z + 8.0f }; // start swinging target
+	Point3D attackWithSwordVerSwingTillTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 2.5f, rightHandRestTarget.z + 8.0f }; // max forward swing action
 	bool attackWithSword = false;
 	SwordAttackTypes attackWithSwordType = SWORD_ATK_HOR; // alternate attacking styles
+	AttackWithSwordAnimState currentAttackSwordAnimState = SWORD_ATK_IDLE;
 	float attackWithSwordTween = 0;
+
+	// TODO package these as the "customization feature" to allow the "director" to customize every hand movement
+	// for inverse kinematic debugs
+	Point3D rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y, rightHandRestTarget.z, { 255, 255, 255} };
+	Point3D leftHandTargetDebug = { leftHandRestTarget.x, leftHandRestTarget.y, leftHandRestTarget.z, { 255, 255, 255} };
+	Point3D rightLegTargetDebug = { rightLegRestTarget.x, rightLegRestTarget.y, rightLegRestTarget.z, { 255, 255, 255} };
+	Point3D leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
 
 	NowAnimating animating = ANIMATING_NONE; // if is animating other stuff, cannot walk
 	void main()
@@ -1108,6 +1115,56 @@ namespace Robot
 			cv.popMatrix();
 		}
 
+		// only when equipped with sword can activate this
+		if (attackWithSword && swordState == SWORD_EQUIPPED && animating == ATTACK_WITH_SWORD)
+		{
+			// if IDLE then hand ***SHOULD*** be in rest position
+			if (currentAttackSwordAnimState == SWORD_ATK_IDLE)
+			{
+				// move hand to the pre-swing target
+				rightHandCurrentTarget = tween(rightHandRestTarget, attackWithSwordVerStartSwingTarget, attackWithSwordTween += 0.005);
+
+				if (attackWithSwordTween >= 1)
+				{
+					attackWithSwordTween = 0;
+					rightHandCurrentTarget = attackWithSwordVerStartSwingTarget;
+					currentAttackSwordAnimState = SWORD_ATK_START_SWING; // move to next state
+				}
+			}
+
+			if (currentAttackSwordAnimState == SWORD_ATK_START_SWING)
+			{
+				// swing until max in front
+				rightHandCurrentTarget = tween(attackWithSwordVerStartSwingTarget, attackWithSwordVerSwingTillTarget, attackWithSwordTween += 0.05);
+
+				if (attackWithSwordTween >= 1)
+				{
+					attackWithSwordTween = 0;
+					rightHandCurrentTarget = attackWithSwordVerSwingTillTarget;
+					currentAttackSwordAnimState = SWORD_ATK_FINISH_SWING;
+				}
+			}
+
+			if (currentAttackSwordAnimState == SWORD_ATK_FINISH_SWING)
+			{
+				// swing back to rest target
+				rightHandCurrentTarget = tween(attackWithSwordVerSwingTillTarget, rightHandRestTarget, attackWithSwordTween += 0.05);
+
+				if (attackWithSwordTween >= 1)
+				{
+					attackWithSwordTween = 0;
+					rightHandCurrentTarget = rightHandRestTarget;
+					currentAttackSwordAnimState = SWORD_ATK_IDLE;
+					animating = ANIMATING_NONE;
+				}
+			}
+		}
+		else if (attackWithSword && swordState != SWORD_EQUIPPED) // prob sword not equipped, free up the animating space to let others animate
+		{
+			attackWithSword = false;
+			animating = ANIMATING_NONE;
+		}
+
 		// arm joint to body
 		// right
 		cv
@@ -1153,8 +1210,8 @@ namespace Robot
 
 		// solve the transformations and draw
 		rightHand.solveIK(rightHandCurrentTarget);
-		rightHand.solveIK(rightHandTargetDebug);
-		cv.pointSize(20).point(rightHandTargetDebug);
+		//rightHand.solveIK(rightHandTargetDebug);
+		//cv.pointSize(20).point(rightHandTargetDebug);
 		rightHand.forceYRotation(rightHandRootYRotation, rightHandJointYRotation, rightHandPalmYRotation);
 		//rightHand.forceYRotation(debugRootY, debugJointY);
 		rightHand.grip(rightHandShouldGrip);
@@ -1225,7 +1282,10 @@ namespace Robot
 			setSwordEquip = !setSwordEquip;
 			break;
 		case 'A': // attack with sword
+			if (animating != ANIMATING_NONE) // only ntg animating only can attack with sword
+				break;
 			attackWithSword = true;
+			animating = ATTACK_WITH_SWORD;
 			break;
 		case 'I':
 			rightHandTargetDebug.y += 0.5;
