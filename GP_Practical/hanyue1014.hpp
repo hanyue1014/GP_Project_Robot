@@ -11,7 +11,7 @@ namespace Robot
 	enum Position { POSITION_LEFT, POSITION_RIGHT };
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
 	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR }; 
-	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
+	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_SWING_OVERSHOOT, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
 	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ANIMATING_NONE };
 
 	// no need create canvas everytime
@@ -754,6 +754,7 @@ namespace Robot
 	int attackWithSwordTargetIndex = 0;
 	Point3D attackWithSwordVerStartSwingTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 9.0f, rightHandRestTarget.z + 8.0f }; // start swinging target
 	Point3D attackWithSwordVerSwingTillTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 2.5f, rightHandRestTarget.z + 8.0f }; // max forward swing action
+	Point3D attackWithSwordVerSwingOvershootTarget = { rightHandRestTarget.x, rightHandRestTarget.y - 1.0f, rightHandRestTarget.z - 6.0f  }; // max forward swing action
 	bool attackWithSword = false;
 	SwordAttackTypes attackWithSwordType = SWORD_ATK_HOR; // alternate attacking styles
 	AttackWithSwordAnimState currentAttackSwordAnimState = SWORD_ATK_IDLE;
@@ -851,7 +852,7 @@ namespace Robot
 		}
 
 		// when equipping sword cannot activate otherwise will crash (sword too long, thanks soon chee ;))
-		if (setShieldActive && !shieldActivated && !(swordState == SWORD_EQUIPPED)) 
+		if (setShieldActive && !shieldActivated) 
 		{
 			if (!shieldActivating)
 			{
@@ -1118,44 +1119,104 @@ namespace Robot
 		// only when equipped with sword can activate this
 		if (attackWithSword && swordState == SWORD_EQUIPPED && animating == ATTACK_WITH_SWORD)
 		{
-			// if IDLE then hand ***SHOULD*** be in rest position
-			if (currentAttackSwordAnimState == SWORD_ATK_IDLE)
+			// when attacking vertically
+			if (attackWithSwordType == SWORD_ATK_VER)
 			{
-				// move hand to the pre-swing target
-				rightHandCurrentTarget = tween(rightHandRestTarget, attackWithSwordVerStartSwingTarget, attackWithSwordTween += 0.005);
-
-				if (attackWithSwordTween >= 1)
+				// if IDLE then hand ***SHOULD*** be in rest position
+				if (currentAttackSwordAnimState == SWORD_ATK_IDLE)
 				{
-					attackWithSwordTween = 0;
-					rightHandCurrentTarget = attackWithSwordVerStartSwingTarget;
-					currentAttackSwordAnimState = SWORD_ATK_START_SWING; // move to next state
+					// move hand to the pre-swing target
+					rightHandCurrentTarget = tween(rightHandRestTarget, attackWithSwordVerStartSwingTarget, attackWithSwordTween += 0.005);
+
+					if (attackWithSwordTween >= 1)
+					{
+						attackWithSwordTween = 0;
+						rightHandCurrentTarget = attackWithSwordVerStartSwingTarget;
+						currentAttackSwordAnimState = SWORD_ATK_START_SWING; // move to next state
+					}
+				}
+
+				if (currentAttackSwordAnimState == SWORD_ATK_START_SWING)
+				{
+					// swing until max in front
+					rightHandCurrentTarget = tween(attackWithSwordVerStartSwingTarget, attackWithSwordVerSwingTillTarget, attackWithSwordTween += 0.05);
+
+					if (attackWithSwordTween >= 1)
+					{
+						attackWithSwordTween = 0;
+						rightHandCurrentTarget = attackWithSwordVerSwingTillTarget;
+						currentAttackSwordAnimState = SWORD_ATK_FINISH_SWING;
+					}
+				}
+
+				if (currentAttackSwordAnimState == SWORD_ATK_FINISH_SWING)
+				{
+					rightHandCurrentTarget = tween(attackWithSwordVerSwingTillTarget, attackWithSwordVerSwingOvershootTarget, attackWithSwordTween += 0.05);
+
+					if (attackWithSwordTween >= 1)
+					{
+						attackWithSwordTween = 0;
+						rightHandCurrentTarget = attackWithSwordVerSwingOvershootTarget;
+						currentAttackSwordAnimState = SWORD_ATK_SWING_OVERSHOOT;
+					}
+				}
+
+				if (currentAttackSwordAnimState == SWORD_ATK_SWING_OVERSHOOT)
+				{
+					// swing back to rest target
+					rightHandCurrentTarget = tween(attackWithSwordVerSwingOvershootTarget, rightHandRestTarget, attackWithSwordTween += 0.01);
+
+					if (attackWithSwordTween >= 1)
+					{
+						attackWithSwordTween = 0;
+						rightHandCurrentTarget = rightHandRestTarget;
+						currentAttackSwordAnimState = SWORD_ATK_IDLE;
+						animating = ANIMATING_NONE;
+					}
 				}
 			}
-
-			if (currentAttackSwordAnimState == SWORD_ATK_START_SWING)
+		
+			if (attackWithSwordType == SWORD_ATK_HOR)
 			{
-				// swing until max in front
-				rightHandCurrentTarget = tween(attackWithSwordVerStartSwingTarget, attackWithSwordVerSwingTillTarget, attackWithSwordTween += 0.05);
-
-				if (attackWithSwordTween >= 1)
+				// if IDLE then hand ***SHOULD*** be in rest position
+				if (currentAttackSwordAnimState == SWORD_ATK_IDLE)
 				{
-					attackWithSwordTween = 0;
-					rightHandCurrentTarget = attackWithSwordVerSwingTillTarget;
-					currentAttackSwordAnimState = SWORD_ATK_FINISH_SWING;
+					// move hand to the pre-swing target
+					rightHandCurrentTarget = tween(rightHandRestTarget, attackWithSwordVerStartSwingTarget, attackWithSwordTween += 0.005);
+
+					if (attackWithSwordTween >= 1)
+					{
+						attackWithSwordTween = 0;
+						rightHandCurrentTarget = attackWithSwordVerStartSwingTarget;
+						currentAttackSwordAnimState = SWORD_ATK_START_SWING; // move to next state
+					}
 				}
-			}
 
-			if (currentAttackSwordAnimState == SWORD_ATK_FINISH_SWING)
-			{
-				// swing back to rest target
-				rightHandCurrentTarget = tween(attackWithSwordVerSwingTillTarget, rightHandRestTarget, attackWithSwordTween += 0.05);
-
-				if (attackWithSwordTween >= 1)
+				if (currentAttackSwordAnimState == SWORD_ATK_START_SWING)
 				{
-					attackWithSwordTween = 0;
-					rightHandCurrentTarget = rightHandRestTarget;
-					currentAttackSwordAnimState = SWORD_ATK_IDLE;
-					animating = ANIMATING_NONE;
+					// swing until max in front
+					rightHandCurrentTarget = tween(attackWithSwordVerStartSwingTarget, attackWithSwordVerSwingTillTarget, attackWithSwordTween += 0.05);
+
+					if (attackWithSwordTween >= 1)
+					{
+						attackWithSwordTween = 0;
+						rightHandCurrentTarget = attackWithSwordVerSwingTillTarget;
+						currentAttackSwordAnimState = SWORD_ATK_FINISH_SWING;
+					}
+				}
+
+				if (currentAttackSwordAnimState == SWORD_ATK_FINISH_SWING)
+				{
+					// swing back to rest target
+					rightHandCurrentTarget = tween(attackWithSwordVerSwingTillTarget, rightHandRestTarget, attackWithSwordTween += 0.05);
+
+					if (attackWithSwordTween >= 1)
+					{
+						attackWithSwordTween = 0;
+						rightHandCurrentTarget = rightHandRestTarget;
+						currentAttackSwordAnimState = SWORD_ATK_IDLE;
+						animating = ANIMATING_NONE;
+					}
 				}
 			}
 		}
@@ -1270,7 +1331,7 @@ namespace Robot
 			shouldGrip = !shouldGrip;
 			break;
 		case 'D': // defense
-			if (animating != ANIMATING_NONE && animating != SHIELD) // shudnt hold
+			if ((animating != ANIMATING_NONE && animating != SHIELD) || swordState == SWORD_EQUIPPED) // shudnt hold and shudnt be able to be toggled when sword is equipped
 				break;
 			animating = SHIELD;
 			setShieldActive = !setShieldActive;
@@ -1286,6 +1347,7 @@ namespace Robot
 				break;
 			attackWithSword = true;
 			animating = ATTACK_WITH_SWORD;
+			attackWithSwordType = attackWithSwordType == SWORD_ATK_HOR ? SWORD_ATK_VER : SWORD_ATK_HOR;
 			break;
 		case 'I':
 			rightHandTargetDebug.y += 0.5;
