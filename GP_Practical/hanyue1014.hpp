@@ -163,7 +163,7 @@ namespace Robot
 	};
 
 	GripAngles fullGrip(85, 45, 90, 90);
-	GripAngles kamekamehaGrip(0, 0, 0, 0);
+	GripAngles kamekamehaGrip(0, 0, 75, 85);
 
 	SwordAnimStates swordState = SWORD_UNEQUIP_IDLE;
 	HammerAnimStates hammerState = HAMMER_UNEQUIPPED;
@@ -956,9 +956,9 @@ namespace Robot
 	Point3D leftkkhLastChargeTarget = leftHandRestTarget;
 	KamekamehaChargeProgress kkhChargeState = KKH_NONE;
 	Color kkhOriBola = { 0, 0, 0 };
-	Color kkhLowBola = { 0, 255, 0};
-	Color kkhMedBola = { 255, 255, 0 };
-	Color kkhHighBola = { 255, 0, 0 };
+	Color kkhLowBola = { 206, 205, 46 };
+	Color kkhMedBola = { 246, 17, 21 };
+	Color kkhHighBola = { 28, 207, 255 };
 	Color kkhPrevColor;
 	Color kkhBolaCurrentColor;
 	float rightkkhPrevRootRotation = 0, leftkkhPrevRootRotation = 0;
@@ -969,6 +969,7 @@ namespace Robot
 	float kkhTopRad = 3, kkhPrevTopRad = 0;
 	bool kamekamehaCharging = false;
 	float kkhTween = 0;
+	float kkhBeamRot = 0;
 
 	Point3D attackWithHammerStartSwingTarget = { leftHandRestTarget.x, 8, 4 };
 	Point3D attackWithHammerSwingTillTarget = { leftHandRestTarget.x, 1, 6 };
@@ -1758,8 +1759,8 @@ namespace Robot
 			animating = ANIMATING_NONE;
 		}
 
-		// kamekameha, only sword not equipped can activate
-		if (kamekamehaCharging && swordState != SWORD_EQUIPPED)
+		// kamekameha, only sword not equipped can activate / hammer / gun not equipped
+		if (kamekamehaCharging && swordState != SWORD_EQUIPPED && hammerState != HAMMER_EQUIPPED && gunState != GUN_EQUIPPED)
 		{
 			if (kkhChargeState == KKH_NONE)
 			{
@@ -1768,6 +1769,9 @@ namespace Robot
 				leftkkhLastChargeTarget = leftHandCurrentTarget = tween(leftHandRestTarget, leftkkhChargeTarget, kkhTween);
 				rightkkhPrevRootRotation = rightHandRootYRotation = tween(rightHandRootRestYRotation, -kkhOriRotateRoot, kkhTween);
 				leftkkhPrevRootRotation = leftHandRootYRotation = tween(leftHandRootRestYRotation, kkhOriRotateRoot, kkhTween);
+				// time to grip in kamekameha pose
+				rightHandShouldGrip = leftHandShouldGrip = true;
+				rightHandGripType = leftHandGripType = GRIP_KAMEKAMEHA;
 				if (kkhTween >= 1)
 				{
 					kkhTween = 0;
@@ -1887,6 +1891,8 @@ namespace Robot
 
 			if (kkhChargeState != KKH_NONE && kkhChargeState != KKH_SHOOT && kkhChargeState != KKH_SHOOTING)
 			{
+				// reset beam rotation since beam not showing d
+				kkhBeamRot = 0;
 				// xian make it no bola
 				kkhBolaCurrentColor = tween(kkhPrevColor, kkhOriBola, kkhTween += 0.005);
 				if (kkhBolaPrevScale.scaleX > 0.2)
@@ -1895,6 +1901,9 @@ namespace Robot
 				rightHandRootYRotation = tween(rightkkhPrevRootRotation, -kkhOriRotateRoot, kkhTween);
 				leftHandRootYRotation = tween(leftkkhPrevRootRotation, kkhOriRotateRoot, kkhTween);
 
+				// shud start ungrip d
+				leftHandShouldGrip = rightHandShouldGrip = false;
+				leftHandGripType = rightHandGripType = GRIP_FULL;
 				if (kkhTween >= 1)
 				{
 					kkhTween = 0;
@@ -1943,7 +1952,10 @@ namespace Robot
 			cv
 				.pushMatrix()
 				.translate(0, 0, 4)
+				.rotate(kkhBeamRot += 0.5, 0, 0, 1)
 				.cylinder({0, 0, 0}, 1, kkhTopRad, kkhBeamLength)
+				// black line inside
+				.cylinder({ 0, 0, 0, {231, 250, 230} }, 0.99, kkhTopRad - 0.01, kkhBeamLength, false, GLU_LINE, 15, 6)
 				.popMatrix()
 				;
 		}
