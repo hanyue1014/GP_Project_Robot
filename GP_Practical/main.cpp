@@ -137,6 +137,10 @@ bool inCameraTranslateMode = false;
 
 void display()
 {
+	SoonChee::lighting();
+
+	//glMaterialfv(GL_FRONT, GL_AMBIENT, ambM);
+
 	// grayish color easier to see stuff
 	cv.clear({50, 50, 50});
 

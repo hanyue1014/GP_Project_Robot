@@ -8,6 +8,14 @@
 #pragma comment (lib, "OpenGL32.lib")
 #pragma comment (lib, "GLU32.lib")
 
+
+float amb[] = { 1.0,1.0,1.0 };   //Red color ambient light
+float dif[] = { 1.0,1.0,1.0 };   //Green color diffuse light
+float posA[] = { 0.0,1.0,0.0 };   //amb light pos (0,1,0) above sphere
+float posD[] = { 1.0,0.0,0.0 };   //dif light pos (1,0,0) right sphere
+float ambM[] = { 0.0,0.0,1.0 };   //Blue color ambient material
+float difM[] = { 0.0,0.0,1.0 };   //Blue color diffuse material
+
 //Step 1: Variable declaration
 BITMAP BMP;             //bitmap structure
 HBITMAP hBMP = NULL;    //bitmap handle
@@ -1084,5 +1092,28 @@ namespace SoonChee
 		glDeleteTextures(1, &textureArr[0]);
 		glDisable(GL_TEXTURE_2D);
 		glPopMatrix();
+	}
+
+	void lighting()
+	{
+		//if (isLightOn)
+		//{
+			glEnable(GL_LIGHTING);  //enable the lighting for the whole scene
+		//}
+		//else
+		//{
+			//glDisable(GL_LIGHTING); //disable the lighting for the whole scene
+		//}
+
+		//Light 0: Red color ambient light at pos (0,1,0)
+		glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
+		glLightfv(GL_LIGHT0, GL_POSITION, posA);
+		glEnable(GL_LIGHT0);
+
+		//Light 1: Green color diffuse light at pos (1,0,0)
+		glLightfv(GL_LIGHT1, GL_DIFFUSE, dif);
+		glLightfv(GL_LIGHT1, GL_POSITION, posD);
+		glEnable(GL_LIGHT1);
+
 	}
 }
