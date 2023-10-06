@@ -4,6 +4,7 @@
 #include "Transform.h"
 #include "Util.h"
 #include "soonchee.hpp"
+#include "yikit.hpp"
 
 namespace Robot
 {
@@ -13,11 +14,12 @@ namespace Robot
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
 	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR };
 	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_SWING_OVERSHOOT, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
-	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, HAMMER_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ATTACK_WITH_HAMMER, CHARGE_KAMEKAMEHA, DEBUG_PLAYBACK, ANIMATING_NONE };
+	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, HAMMER_EQUIP_UNEQUIP, GUN_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ATTACK_WITH_HAMMER, CHARGE_KAMEKAMEHA, DEBUG_PLAYBACK, ANIMATING_NONE };
 	enum EditModeEditTargets { EDIT_LEFT_HAND, EDIT_RIGHT_HAND, EDIT_LEFT_LEG, EDIT_RIGHT_LEG };
 	enum KamekamehaChargeProgress { KKH_NONE, KKH_LOW, KKH_MEDIUM, KKH_HIGH, KKH_SHOOT, KKH_SHOOTING };
 	enum HammerAnimStates { HAMMER_FLYOUT, HAMMER_UNGRIPPING, HAMMER_FLYIN, HAMMER_GRIPPING, HAMMER_EQUIPPED, HAMMER_UNEQUIPPED };
 	enum AttackWithHammerAnimState { HAMMER_ATK_START_SWING, HAMMER_ATK_FINISH_SWING, HAMMER_ATK_SWING_OVERSHOOT, HAMMER_ATK_IDLE };
+	enum GunAnimStates { GUN_EQUIPPING, GUN_UNEQUIPPING, GUN_EQUIPPED, GUN_UNEQUIPPED };
 
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
@@ -25,7 +27,7 @@ namespace Robot
 	Color lineOrJoint = { 80, 87, 132 };
 	Color eyeC = { 39, 37, 55 };
 	Color secondary = { 3, 210, 255 };
-	Color accent = { 0, 255, 0 };
+	Color accent = { 255, 165, 0 };
 	Color outline = { 0, 0, 0 };
 
 	void Head()
@@ -34,10 +36,6 @@ namespace Robot
 			// left half
 			.pushMatrix()
 			.rotate(90, 0, 0, 1)
-			.cuboid({ -0.3, 1.25, 0.2, primary }, { 0.7, 1.25, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
-			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			// "eyes"
 			.pushMatrix()
 			.translate(0, 0, 0.601)
@@ -48,15 +46,15 @@ namespace Robot
 			.rotate(30, 0, 0, 1)
 			.rect({ -0.1, 0.65, eyeC }, { 0.1, 0.25 })
 			.popMatrix()
+			.cuboid({ -0.3, 1.25, 0.2, primary }, { 0.7, 1.25, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
+			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.popMatrix()
 			// right half
 			.pushMatrix()
 			.rotate(180, 0, 1, 0)
 			.rotate(90, 0, 0, 1)
-			.cuboid({ -0.3, 1.25, 0.2, primary }, { 0.7, 1.25, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
-			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
-			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			// "eyes"
 			.pushMatrix()
 			.translate(0, 0, -0.601)
@@ -67,6 +65,10 @@ namespace Robot
 			.rotate(30, 0, 0, 1)
 			.rect({ -0.1, 0.65, eyeC }, { 0.1, 0.25 })
 			.popMatrix()
+			.cuboid({ -0.3, 1.25, 0.2, primary }, { 0.7, 1.25, -0.2 }, { -1, 0.75, 0.6 }, { 1, 0.75, -0.6 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
+			.cuboid({ -1, 0.75, 0.6, primary }, { 1, 0, -0.6 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.popMatrix()
 			// chin
 			.pyramid({ -0.75, -1, 0.6, primary }, { 0.75, -1, -0.6 }, { 0, -1.4, 0.25 })
@@ -164,6 +166,8 @@ namespace Robot
 	SwordAnimStates swordState = SWORD_UNEQUIP_IDLE;
 	HammerAnimStates hammerState = HAMMER_UNEQUIPPED;
 	float hammerAnimTranslateZ = 0, hammerAnimFlyInFromFlyOutTo = 15; // add this value to make it fly out
+	GunAnimStates gunState = GUN_UNEQUIPPED;
+	float gunEquipRotation = 0;
 
 	class Hand
 	{
@@ -342,6 +346,22 @@ namespace Robot
 					.scale(0.25, 0.5, 0.3)
 					;
 				SoonChee::hammer();
+				cv.popMatrix();
+			}
+
+			if (gunState == GUN_EQUIPPED || gunState == GUN_EQUIPPING)
+			{
+				cv.pushMatrix();
+				cv
+					.translate(pos == POSITION_RIGHT ? -0.3 : 0.3, -1.2, 0)
+					.rotate(90, 1, 0, 0)
+					.rotate(90, 0, 1, 0)
+					.rotate(gunEquipRotation, 0, 0, 1)
+					.scale(0.2, 0.2, 0.1)
+					;
+
+				YiKit::display();
+
 				cv.popMatrix();
 			}
 
@@ -825,15 +845,15 @@ namespace Robot
 	Point3D leftLegPrevTargetDebug = leftLegTargetDebug;
 	float rightHandJointYDebugRecord = 0, rightHandRootYDebugRecord = 0, rightHandPalmYDebugRecord = 0, rightHandPalmZDebugRecord = 0;
 	float leftHandJointYDebugRecord = 0, leftHandRootYDebugRecord = 0, leftHandPalmYDebugRecord = 0, leftHandPalmZDebugRecord = 0;
-	float 
-		rightHandPrevJointYDebug = rightHandJointYDebug = 0, 
-		rightHandPrevRootYDebug = rightHandRootYDebug = 0, 
-		rightHandPrevPalmYDebug = rightHandPalmYDebug = 0, 
+	float
+		rightHandPrevJointYDebug = rightHandJointYDebug = 0,
+		rightHandPrevRootYDebug = rightHandRootYDebug = 0,
+		rightHandPrevPalmYDebug = rightHandPalmYDebug = 0,
 		rightHandPrevPalmZDebug = rightHandPalmZDebug = 0;
-	float 
-		leftHandPrevJointYDebug = leftHandJointYDebug = 0, 
-		leftHandPrevRootYDebug = leftHandRootYDebug = 0, 
-		leftHandPrevPalmYDebug = leftHandPalmYDebug = 0, 
+	float
+		leftHandPrevJointYDebug = leftHandJointYDebug = 0,
+		leftHandPrevRootYDebug = leftHandRootYDebug = 0,
+		leftHandPrevPalmYDebug = leftHandPalmYDebug = 0,
 		leftHandPrevPalmZDebug = leftHandPalmZDebug = 0;
 
 	bool debugPlayBack = false;
@@ -843,9 +863,6 @@ namespace Robot
 	float walkingTweenProgress = 0;
 	float stopWalkingTweenProgress = 0;
 	float bodyCurrentWalkRotation = 0, maxBodyWalkRotation = 10, lastRotationBeforeStopWalking = 0;
-
-	// debug purpose (test grip)
-	bool shouldGrip = false;
 
 	Transform shieldActiveState;
 	float shieldActiveRotateY = 0; // both shield should be same
@@ -906,6 +923,12 @@ namespace Robot
 
 	bool setHammerEquip = false;
 	float hammerTween = 0;
+
+	bool setGunEquip = false;
+	float gunEquipUnequipTween = 0;
+	float gunEquipPrevRotation = 0;
+	Point3D rightHandGunEquipUnequipTarget = { rightHandRestTarget.x, 3, 5 }; // temp
+	Point3D leftHandGunEquipUnequipTarget = { leftHandRestTarget.x, 3, 5 };
 
 	Point3D attackWithSwordVerStartSwingTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 9.0f, rightHandRestTarget.z + 8.0f }; // start swinging target
 	Point3D attackWithSwordVerSwingTillTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 2.5f, rightHandRestTarget.z + 8.0f }; // max forward swing action
@@ -1143,8 +1166,8 @@ namespace Robot
 		Hand rightHand({ 5, 8, 0 });
 		Hand leftHand({ -5, 8, 0 }, POSITION_LEFT);
 
-		// equipping a sword
-		if (setSwordEquip)
+		// equipping a sword (cannot equip when gun equipped)
+		if (setSwordEquip && gunState != GUN_EQUIPPED)
 		{
 			if (swordState == SWORD_UNEQUIP_IDLE)
 			{
@@ -1276,7 +1299,8 @@ namespace Robot
 		}
 
 		// hammer won't float around when unequipped, so can still equip/unequip when unequipped weapons are hidden
-		if (setHammerEquip)
+		// but only can equip if guns are not equipped
+		if (setHammerEquip && gunState != GUN_EQUIPPED)
 		{
 			if (hammerState == HAMMER_UNEQUIPPED)
 			{
@@ -1363,6 +1387,97 @@ namespace Robot
 				{
 					hammerTween = 0;
 					leftHandCurrentTarget = leftHandRestTarget;
+					animating = ANIMATING_NONE;
+				}
+			}
+		}
+
+		// only not equipping sword AND hammer ka can equip gun
+		// no need test for shield becuz when shield activated nothing else can run
+		if (setGunEquip && swordState != SWORD_EQUIPPED && hammerState != HAMMER_EQUIPPED)
+		{
+			if (gunState == GUN_UNEQUIPPED)
+			{
+				// move both hand to target
+				rightHandCurrentTarget = tween(rightHandRestTarget, rightHandGunEquipUnequipTarget, gunEquipUnequipTween += 0.05);
+				leftHandCurrentTarget = tween(leftHandRestTarget, leftHandGunEquipUnequipTarget, gunEquipUnequipTween);
+				if (gunEquipUnequipTween >= 1)
+				{
+					gunEquipUnequipTween = 0;
+					rightHandCurrentTarget = rightHandGunEquipUnequipTarget;
+					leftHandCurrentTarget = leftHandGunEquipUnequipTarget;
+					gunState = GUN_EQUIPPING;
+				}
+			}
+
+			if (gunState == GUN_EQUIPPING)
+			{
+				// while not finished gripping keep spinning the gun
+				if (!leftHand.isGripping() || !rightHand.isGripping())
+				{
+					leftHandShouldGrip = rightHandShouldGrip = true;
+					leftHandGripType = rightHandGripType = GRIP_FULL;
+					gunEquipPrevRotation = gunEquipRotation += 10;
+					if (gunEquipRotation >= 360)
+						gunEquipPrevRotation = gunEquipRotation = 0;
+				}
+				else if (leftHand.isGripping() && rightHand.isGripping())
+				{
+					gunEquipRotation = tween(gunEquipPrevRotation, 0, gunEquipUnequipTween += 0.075);
+					if (gunEquipUnequipTween >= 1)
+					{
+						gunEquipRotation = 0;
+						gunEquipUnequipTween = 0;
+						gunState = GUN_EQUIPPED;
+						animating = ANIMATING_NONE;
+					}
+				}
+			}
+		}
+		else if (setGunEquip && (swordState == SWORD_EQUIPPED || hammerState == HAMMER_EQUIPPED))
+		{
+			// free up the animation slot
+			animating = ANIMATING_NONE;
+			setGunEquip = false;
+		}
+		// unequip gun
+		if (!setGunEquip)
+		{
+			if (gunState == GUN_EQUIPPED)
+			{
+				// rotate the gun while ungripping it
+				if (leftHand.isGripping() || rightHand.isGripping())
+				{
+					leftHandShouldGrip = false;
+					rightHandShouldGrip = false;
+					gunEquipPrevRotation = gunEquipRotation += 10;
+					if (gunEquipRotation >= 360)
+						gunEquipPrevRotation = gunEquipRotation = 0;
+				}
+				else if (!leftHand.isGripping() && !rightHand.isGripping())
+				{
+					// tween gun to face down and make it disappear
+					gunEquipRotation = tween(gunEquipPrevRotation, -90, gunEquipUnequipTween += 0.075);
+					if (gunEquipUnequipTween >= 1)
+					{
+						gunEquipUnequipTween = 0;
+						gunEquipRotation = -90;
+						gunState = GUN_UNEQUIPPING;
+					}
+				}
+			}
+
+			if (gunState == GUN_UNEQUIPPING)
+			{
+				// tween hands back to rest and consider whole animation done
+				rightHandCurrentTarget = tween(rightHandGunEquipUnequipTarget, rightHandRestTarget, gunEquipUnequipTween += 0.05);
+				leftHandCurrentTarget = tween(leftHandGunEquipUnequipTarget, leftHandRestTarget, gunEquipUnequipTween += 0.05);
+				if (gunEquipUnequipTween >= 1)
+				{
+					gunEquipUnequipTween = 0;
+					rightHandCurrentTarget = rightHandRestTarget;
+					leftHandCurrentTarget = leftHandRestTarget;
+					gunState = GUN_UNEQUIPPED;
 					animating = ANIMATING_NONE;
 				}
 			}
@@ -2192,9 +2307,6 @@ namespace Robot
 			animating = WALK;
 			isWalking = true;
 			break;
-		case 'G':
-			shouldGrip = !shouldGrip;
-			break;
 		case '1': // defense
 			// only not hiding unequipped weapon baru can activate defense
 			if ((animating != ANIMATING_NONE && animating != SHIELD) || hideUnequippedWeapon || swordState == SWORD_EQUIPPED) // shudnt hold and shudnt be able to be toggled when sword is equipped
@@ -2209,24 +2321,30 @@ namespace Robot
 			animating = SWORD_EQUIP_UNEQUIP;
 			setSwordEquip = !setSwordEquip;
 			break;
-		case '3':
-			if (animating != ANIMATING_NONE)
-				break;
-			animating = HAMMER_EQUIP_UNEQUIP;
-			setHammerEquip = !setHammerEquip;
-			break;
-		case '4':
-			if (animating != ANIMATING_NONE)
-				break;
-			animating = ATTACK_WITH_HAMMER;
-			attackWithHammer = true;
-			break;
-		case 'A': // attack with sword
+		case '3': // attack with sword
 			if (animating != ANIMATING_NONE) // only ntg animating only can attack with sword
 				break;
 			attackWithSword = true;
 			animating = ATTACK_WITH_SWORD;
 			attackWithSwordType = attackWithSwordType == SWORD_ATK_HOR ? SWORD_ATK_VER : SWORD_ATK_HOR;
+			break;
+		case '4':
+			if (animating != ANIMATING_NONE)
+				break;
+			animating = HAMMER_EQUIP_UNEQUIP;
+			setHammerEquip = !setHammerEquip;
+			break;
+		case '5':
+			if (animating != ANIMATING_NONE)
+				break;
+			animating = ATTACK_WITH_HAMMER;
+			attackWithHammer = true;
+			break;
+		case '6':
+			if (animating != ANIMATING_NONE)
+				break;
+			animating = GUN_EQUIP_UNEQUIP;
+			setGunEquip = !setGunEquip;
 			break;
 		case 'C':
 			if (animating != ANIMATING_NONE) // only ntg animating only can attack with sword
