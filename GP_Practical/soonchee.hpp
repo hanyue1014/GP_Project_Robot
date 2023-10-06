@@ -8,14 +8,6 @@
 #pragma comment (lib, "OpenGL32.lib")
 #pragma comment (lib, "GLU32.lib")
 
-
-float amb[] = { 1.0,1.0,1.0 };   //Red color ambient light
-float dif[] = { 1.0,1.0,1.0 };   //Green color diffuse light
-float posA[] = { 0.0,1.0,0.0 };   //amb light pos (0,1,0) above sphere
-float posD[] = { 1.0,0.0,0.0 };   //dif light pos (1,0,0) right sphere
-float ambM[] = { 0.0,0.0,1.0 };   //Blue color ambient material
-float difM[] = { 0.0,0.0,1.0 };   //Blue color diffuse material
-
 //Step 1: Variable declaration
 BITMAP BMP;             //bitmap structure
 HBITMAP hBMP = NULL;    //bitmap handle
@@ -866,7 +858,7 @@ namespace SoonChee
 		glEnd();
 	}
 
-	void shield()
+	void shield(bool combined, bool isLeft)
 	{
 		glPushMatrix();
 		glTranslatef(-0.2, 0, 0);
@@ -903,26 +895,34 @@ namespace SoonChee
 		glColor3f(1, 1, 1);
 		hammerBuildLine(0.4, 0.1);
 		glPopMatrix();
-		glPushMatrix();
-		glRotatef(90, 0, 0, -1);
-		glTranslatef(-0.3, 0.4, 0);
-		textureArr[0] = loadTexture("shield.bmp");
-		sheildSide(0.8, 0.1);
-		glDeleteTextures(1, &textureArr[0]);
-		glDisable(GL_TEXTURE_2D);
-		glColor3f(1, 1, 1);
-		sheildSideLine(0.8, 0.1);
-		glPopMatrix();
-		glPushMatrix();
-		glRotatef(90, 0, 0, 1);
-		glTranslatef(-0.5, 0, 0);
-		textureArr[0] = loadTexture("shield.bmp");
-		sheildSide(0.8, 0.1);
-		glDeleteTextures(1, &textureArr[0]);
-		glDisable(GL_TEXTURE_2D);
-		glColor3f(1, 1, 1);
-		sheildSideLine(0.8, 0.1);
-		glPopMatrix();
+		if (combined && isLeft) {}
+		else 
+		{
+			glPushMatrix();
+			glRotatef(90, 0, 0, -1);
+			glTranslatef(-0.3, 0.4, 0);
+			textureArr[0] = loadTexture("shield.bmp");
+			sheildSide(0.8, 0.1);
+			glDeleteTextures(1, &textureArr[0]);
+			glDisable(GL_TEXTURE_2D);
+			glColor3f(1, 1, 1);
+			sheildSideLine(0.8, 0.1);
+			glPopMatrix();
+		}
+		if (combined && !isLeft) {}
+		else
+		{
+			glPushMatrix();
+			glRotatef(90, 0, 0, 1);
+			glTranslatef(-0.5, 0, 0);
+			textureArr[0] = loadTexture("shield.bmp");
+			sheildSide(0.8, 0.1);
+			glDeleteTextures(1, &textureArr[0]);
+			glDisable(GL_TEXTURE_2D);
+			glColor3f(1, 1, 1);
+			sheildSideLine(0.8, 0.1);
+			glPopMatrix();
+		}
 		glPopMatrix();
 	}
 
@@ -1094,26 +1094,4 @@ namespace SoonChee
 		glPopMatrix();
 	}
 
-	void lighting()
-	{
-		//if (isLightOn)
-		//{
-			glEnable(GL_LIGHTING);  //enable the lighting for the whole scene
-		//}
-		//else
-		//{
-			//glDisable(GL_LIGHTING); //disable the lighting for the whole scene
-		//}
-
-		//Light 0: Red color ambient light at pos (0,1,0)
-		glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
-		glLightfv(GL_LIGHT0, GL_POSITION, posA);
-		glEnable(GL_LIGHT0);
-
-		//Light 1: Green color diffuse light at pos (1,0,0)
-		glLightfv(GL_LIGHT1, GL_DIFFUSE, dif);
-		glLightfv(GL_LIGHT1, GL_POSITION, posD);
-		glEnable(GL_LIGHT1);
-
-	}
 }

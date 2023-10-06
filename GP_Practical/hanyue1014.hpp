@@ -1845,7 +1845,7 @@ namespace Robot
 			cv.translate(shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
 			cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
 
-			SoonChee::shield();
+			SoonChee::shield(shieldActivated, false);
 
 			cv.popMatrix();
 
@@ -1856,7 +1856,7 @@ namespace Robot
 			cv.translate(-shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
 			cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
 
-			SoonChee::shield();
+			SoonChee::shield(shieldActivated, true);
 
 			cv.popMatrix();
 		}

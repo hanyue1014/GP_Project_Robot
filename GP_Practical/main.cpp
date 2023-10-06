@@ -135,14 +135,44 @@ Transform debugTrans2;
 Transform cameraTrans;
 bool inCameraTranslateMode = false;
 
+float dif[] = { 1.0,1.0,1.0 };   //Green color diffuse light
+float pos[] = { 0.0,0.0,1.0 };   //dif light pos (1,0,0) right sphere
+bool isLightOn = false;
+bool editingLight = false;
+
+void lighting()
+{
+	if (isLightOn)
+	{
+		glEnable(GL_LIGHTING);  //enable the lighting for the whole scene
+		glEnable(GL_COLOR_MATERIAL);
+		//Light 0: Ambient light
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+		glLightfv(GL_LIGHT0, GL_POSITION, pos);
+		glEnable(GL_LIGHT0);
+
+		if (editingLight)
+		{
+			glColor3f(dif[0], dif[1], dif[2]);
+			glPointSize(20);
+			glBegin(GL_POINTS);
+			glVertex3f(pos[0], pos[1], pos[2]);
+			glEnd();
+		}
+	}
+	else
+	{
+		glDisable(GL_LIGHTING); //disable the lighting for the whole scene
+	}
+}
+
+
 void display()
 {
-	SoonChee::lighting();
-
-	//glMaterialfv(GL_FRONT, GL_AMBIENT, ambM);
-
 	// grayish color easier to see stuff
 	cv.clear({50, 50, 50});
+	
+	lighting();
 
 	cv.setProjection(projectionMode);
 	
@@ -244,6 +274,43 @@ void handleKeyDownEvent(WPARAM key)
 		return;
 	case VK_DOWN:
 		debugTrans2.rotAngle += 1;
+		return;
+	}
+
+	switch (key)
+	{
+	case '9':
+		isLightOn = !isLightOn;
+		break;
+	case '8':
+		editingLight = !editingLight;
+		break;
+	}
+
+	if (editingLight)
+	{
+		switch (key)
+		{
+		case 'W':
+			pos[1] += 0.01;
+			break;
+		case 'S':
+			pos[1] -= 0.01;
+			break;
+		case 'A':
+			pos[0] -= 0.01;
+			break;
+		case 'D':
+			pos[0] += 0.01;
+			break;
+		case 'E': // move light in
+			pos[2] -= 0.01;
+			break;
+		case 'Q': // move light out
+			pos[2] += 0.01;
+			break;
+		}
+
 		return;
 	}
 
