@@ -8,6 +8,7 @@
 
 namespace Robot
 {
+	enum ArmorColorType { ARMOR_LIGHT, ARMOR_DARK };
 	// for hand and leg use, define position so place wont weird weird eh
 	enum Position { POSITION_LEFT, POSITION_RIGHT };
 	enum GripType { GRIP_FULL, GRIP_KAMEKAMEHA };
@@ -25,12 +26,27 @@ namespace Robot
 
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
+	Color lightPrimary = { 218, 219, 214 };
+	Color lightLineOrJoint = { 80, 87, 132 };
+	Color lightEyeC = { 39, 37, 55 };
+	Color lightSecondary = { 3, 210, 255 };
+	Color lightAccent = { 255, 165, 0 };
+	Color lightOutline = { 0, 0, 0 };
+	Color darkPrimary = { 37, 36, 41 };
+	Color darkLineOrJoint = { 140, 134, 98 };
+	Color darkEyeC = { 216, 218, 200 };
+	Color darkSecondary = { 252, 100, 0 };
+	Color darkAccent = { 0, 90, 255 };
+	Color darkOutline = { 180, 180, 180 };
 	Color primary = { 218, 219, 214 };
 	Color lineOrJoint = { 80, 87, 132 };
 	Color eyeC = { 39, 37, 55 };
 	Color secondary = { 3, 210, 255 };
 	Color accent = { 255, 165, 0 };
 	Color outline = { 0, 0, 0 };
+	ArmorColorType armorType = ARMOR_LIGHT;
+	float armorChangeTween = 0;
+	bool changeArmor = false;
 
 	void Head()
 	{
@@ -1035,6 +1051,55 @@ namespace Robot
 				animating = ANIMATING_NONE;
 				debugPlayBack = false;
 			}
+		}
+
+		if (changeArmor)
+		{
+			// use two if statements for better code readability
+			if (armorType == ARMOR_LIGHT)
+			{
+				primary = tween(lightPrimary, darkPrimary, armorChangeTween += 0.05);
+				lineOrJoint = tween(lightLineOrJoint, darkLineOrJoint, armorChangeTween);
+				eyeC = tween(lightEyeC, darkEyeC, armorChangeTween);
+				secondary = tween(lightSecondary, darkSecondary, armorChangeTween);
+				accent = tween(lightAccent, darkAccent, armorChangeTween);
+				outline = tween(lightOutline, darkOutline, armorChangeTween);
+
+				if (armorChangeTween >= 1)
+				{
+					armorChangeTween = 0;
+					primary = darkPrimary;
+					lineOrJoint = darkLineOrJoint;
+					eyeC = darkEyeC;
+					secondary = darkSecondary;
+					accent = darkAccent;
+					outline = darkOutline;
+					changeArmor = false;
+					armorType = ARMOR_DARK;
+				}
+			}
+			else if (armorType == ARMOR_DARK)
+			{
+				primary = tween(darkPrimary, lightPrimary, armorChangeTween += 0.05);
+				lineOrJoint = tween(darkLineOrJoint, lightLineOrJoint, armorChangeTween);
+				eyeC = tween(darkEyeC, lightEyeC, armorChangeTween);
+				secondary = tween(darkSecondary, lightSecondary, armorChangeTween);
+				accent = tween(darkAccent, lightAccent, armorChangeTween);
+				outline = tween(darkOutline, lightOutline, armorChangeTween);
+				if (armorChangeTween >= 1)
+				{
+					armorChangeTween = 0;
+					primary = lightPrimary;
+					lineOrJoint = lightLineOrJoint;
+					eyeC = lightEyeC;
+					secondary = lightSecondary;
+					accent = lightAccent;
+					outline = lightOutline;
+					changeArmor = false;
+					armorType = ARMOR_LIGHT;
+				}
+			}
+
 		}
 
 		if (isWalking && animating == WALK)
@@ -2429,11 +2494,20 @@ namespace Robot
 				break;
 			}
 
+			if (key == VK_SHIFT)
+			{
+				// can use SHIFT to toggle armor in edit mode
+				changeArmor = true;
+			}
+
 			return;
 		}
 
 		switch (key)
 		{
+		case 'A': // the only animation that can take place when other animation is happening
+			changeArmor = true;
+			break;
 		case 'W': 
 			if (animating != ANIMATING_NONE && animating != WALK)
 				break;
