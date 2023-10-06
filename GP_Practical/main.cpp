@@ -70,6 +70,10 @@ int WINAPI WinMain(
 	glEnable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 
+	// only need to init once, no need call everytime in loop
+	Robot::initWeaponRestAndOriStates();
+	Robot::initWeaponActiveStates();
+
 	while(true)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -127,18 +131,29 @@ Canvas cv(20, 20, 20);
 ProjectionMode projectionMode = ORTHO;
 bool debug = true;
 Transform debugTrans;
+Transform debugTrans2;
+Transform cameraTrans;
+bool inCameraTranslateMode = false;
+
 void display()
 {
 	// grayish color easier to see stuff
 	cv.clear({50, 50, 50});
 
 	cv.setProjection(projectionMode);
-	cv.rotate(debugTrans.rotAngle, debugTrans.rotX, debugTrans.rotY, debugTrans.rotZ);
+	cv
+		.translate(cameraTrans.transX, cameraTrans.transY, cameraTrans.transZ)
+		.rotate(debugTrans2.rotAngle, 1, 0, 0)
+		.rotate(debugTrans.rotAngle, debugTrans.rotX, debugTrans.rotY, debugTrans.rotZ);
 
 	// cv.rotate(0.01, 1, 1, 1);
 	//cv.cuboid({ 0, 0, 0, {255, 0, 0} }, { 5, 5, 5, {255, 255, 0}})
 	Robot::main();
+	//Robot::Leg({ 0, 0, 0 }).draw();
+	//Robot::Hand({ 0, 0, 0 }).draw();
 	//Robot::Head();
+	//Robot::Finger({ 0, 0, 0 }).draw();
+	//SoonChee::sword();
 	if (debug)
 		cv.showDebugGrid();
 }
@@ -146,6 +161,38 @@ void display()
 // event handling
 void handleKeyDownEvent(WPARAM key)
 {
+	// press 0 to toggle move camera mode
+	if (key == '0')
+	{
+		inCameraTranslateMode = !inCameraTranslateMode;
+		return;
+	}
+
+	if (inCameraTranslateMode)
+	{
+		switch (key)
+		{
+		case 'W':
+			cameraTrans.transY -= 0.5;
+			return;
+		case 'S':
+			cameraTrans.transY += 0.5;
+			return;
+		case 'A':
+			cameraTrans.transX += 0.5;
+			return;
+		case 'D':
+			cameraTrans.transX -= 0.5;
+			return;
+		case 'E': // move camera far
+			cameraTrans.transZ -= 0.5;
+			return;
+		case 'Q': // move camera near
+			cameraTrans.transZ += 0.5;
+			return;
+		}
+	}
+
 	switch (key)
 	{
 	case VK_F1:
@@ -159,32 +206,35 @@ void handleKeyDownEvent(WPARAM key)
 		debugTrans.rotAngle = 90;
 		debugTrans.rotY = debugTrans.rotY == 1 ? -1 : 1;
 		debugTrans.rotX = debugTrans.rotZ = 0;
+		debugTrans2 = Transform();
 		return;
 	case 'Y':
 		debugTrans.rotAngle = 90;
 		debugTrans.rotX = debugTrans.rotX == 1 ? -1 : 1;
 		debugTrans.rotZ = debugTrans.rotY = 0;
+		debugTrans2 = Transform();
 		return;
 	case 'Z':
 		debugTrans.rotAngle = debugTrans.rotAngle == 180 ? 0 : 180;
 		debugTrans.rotY = 1;
 		debugTrans.rotX = debugTrans.rotZ = 0;
+		debugTrans2 = Transform();
 		return;
 	case VK_LEFT:
 		debugTrans.rotAngle += 1;
+		debugTrans.rotX = debugTrans.rotZ = 0;
 		debugTrans.rotY = 1;
 		return;
 	case VK_RIGHT:
 		debugTrans.rotAngle -= 1;
+		debugTrans.rotX = debugTrans.rotZ = 0;
 		debugTrans.rotY = 1;
 		return;
 	case VK_UP:
-		debugTrans.rotAngle -= 1;
-		debugTrans.rotX = 1;
+		debugTrans2.rotAngle -= 1;
 		return;
 	case VK_DOWN:
-		debugTrans.rotAngle += 1;
-		debugTrans.rotX = 1;
+		debugTrans2.rotAngle += 1;
 		return;
 	}
 
