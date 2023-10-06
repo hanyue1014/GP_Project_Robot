@@ -55,5 +55,8 @@
     <Image Include="..\..\..\Desktop\Assignment\Assignment\shield.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="background.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

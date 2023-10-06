@@ -141,6 +141,11 @@ void display()
 	cv.clear({50, 50, 50});
 
 	cv.setProjection(projectionMode);
+	
+	if (projectionMode == ORTHO)
+		SoonChee::orthoBackground();
+	else
+		SoonChee::perspectiveBackground();
 	cv
 		.translate(cameraTrans.transX, cameraTrans.transY, cameraTrans.transZ)
 		.rotate(debugTrans2.rotAngle, 1, 0, 0)

@@ -144,6 +144,7 @@
     <Image Include="..\..\..\Desktop\Assignment\Assignment\metal.bmp" />
     <Image Include="..\..\..\Desktop\Assignment\Assignment\shield.bmp" />
     <Image Include="..\..\..\Desktop\Assignment\Assignment\wood.bmp" />
+    <Image Include="background.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

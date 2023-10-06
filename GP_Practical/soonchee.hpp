@@ -1040,5 +1040,49 @@ namespace SoonChee
 		glPopMatrix();
 		glPopMatrix();
 	}
+	void perspectiveBackground()
+	{
+		glPushMatrix();
+		glTranslatef(0, 0, -10);
+		glScalef(15, 15, 15);
+		glColor3f(1, 1, 1);
+		GLuint textureArr[1];
+		textureArr[0] = loadTexture("background.bmp");
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex2f(1, 1);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex2f(-1, 1);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex2f(-1, -1);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex2f(1, -1);
+		glEnd();
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		glPopMatrix();
+	}
 
+	void orthoBackground()
+	{
+		glPushMatrix();
+		glTranslatef(0, 0, -0.9);
+		glScalef(1, 1, 1);
+		glColor3f(1, 1, 1);
+		GLuint textureArr[1];
+		textureArr[0] = loadTexture("background.bmp");
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex2f(1, 1);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex2f(-1, 1);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex2f(-1, -1);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex2f(1, -1);
+		glEnd();
+		glDeleteTextures(1, &textureArr[0]);
+		glDisable(GL_TEXTURE_2D);
+		glPopMatrix();
+	}
 }
