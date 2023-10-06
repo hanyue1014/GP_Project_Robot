@@ -13,7 +13,7 @@ namespace Robot
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
 	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR };
 	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_SWING_OVERSHOOT, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
-	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, CHARGE_KAMEKAMEHA, ANIMATING_NONE };
+	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, CHARGE_KAMEKAMEHA, DEBUG_PLAYBACK, ANIMATING_NONE };
 	enum EditModeEditTargets { EDIT_LEFT_HAND, EDIT_RIGHT_HAND, EDIT_LEFT_LEG, EDIT_RIGHT_LEG };
 	enum KamekamehaChargeProgress { KKH_NONE, KKH_LOW, KKH_MEDIUM, KKH_HIGH, KKH_SHOOT, KKH_SHOOTING };
 
@@ -793,6 +793,29 @@ namespace Robot
 	Point3D leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
 	float rightHandJointYDebug = 0, rightHandRootYDebug = 0, rightHandPalmYDebug = 0, rightHandPalmZDebug = 0;
 	float leftHandJointYDebug = 0, leftHandRootYDebug = 0, leftHandPalmYDebug = 0, leftHandPalmZDebug = 0;
+	Point3D rightHandTargetDebugRecord = rightHandTargetDebug;
+	Point3D leftHandTargetDebugRecord = leftHandTargetDebug;
+	Point3D rightLegTargetDebugRecord = rightLegTargetDebug;
+	Point3D leftLegTargetDebugRecord = leftLegTargetDebug;
+	Point3D rightHandPrevTargetDebug = rightHandTargetDebug;
+	Point3D leftHandPrevTargetDebug = leftHandTargetDebug;
+	Point3D rightLegPrevTargetDebug = rightLegTargetDebug;
+	Point3D leftLegPrevTargetDebug = leftLegTargetDebug;
+	float rightHandJointYDebugRecord = 0, rightHandRootYDebugRecord = 0, rightHandPalmYDebugRecord = 0, rightHandPalmZDebugRecord = 0;
+	float leftHandJointYDebugRecord = 0, leftHandRootYDebugRecord = 0, leftHandPalmYDebugRecord = 0, leftHandPalmZDebugRecord = 0;
+	float 
+		rightHandPrevJointYDebug = rightHandJointYDebug = 0, 
+		rightHandPrevRootYDebug = rightHandRootYDebug = 0, 
+		rightHandPrevPalmYDebug = rightHandPalmYDebug = 0, 
+		rightHandPrevPalmZDebug = rightHandPalmZDebug = 0;
+	float 
+		leftHandPrevJointYDebug = leftHandJointYDebug = 0, 
+		leftHandPrevRootYDebug = leftHandRootYDebug = 0, 
+		leftHandPrevPalmYDebug = leftHandPalmYDebug = 0, 
+		leftHandPrevPalmZDebug = leftHandPalmZDebug = 0;
+
+	bool debugPlayBack = false;
+	float targetDebugTween = 0;
 
 	bool isWalking = false;
 	float walkingTweenProgress = 0;
@@ -899,6 +922,46 @@ namespace Robot
 
 	void main()
 	{
+		if (debugPlayBack && inEditMode && animating == DEBUG_PLAYBACK)
+		{
+			rightHandTargetDebug = tween(rightHandPrevTargetDebug, rightHandTargetDebugRecord, targetDebugTween += 0.05);
+			leftHandTargetDebug = tween(leftHandPrevTargetDebug, leftHandTargetDebugRecord, targetDebugTween);
+			rightLegTargetDebug = tween(rightLegPrevTargetDebug, rightLegTargetDebugRecord, targetDebugTween);
+			leftLegTargetDebug = tween(leftLegPrevTargetDebug, leftLegTargetDebugRecord, targetDebugTween);
+
+			rightHandJointYDebug = tween(rightHandPrevJointYDebug, rightHandJointYDebugRecord, targetDebugTween);
+			rightHandRootYDebug = tween(rightHandPrevRootYDebug, rightHandRootYDebugRecord, targetDebugTween);
+			rightHandPalmYDebug = tween(rightHandPrevPalmYDebug, rightHandPalmYDebugRecord, targetDebugTween);
+			rightHandPalmZDebug = tween(rightHandPrevPalmZDebug, rightHandPalmZDebugRecord, targetDebugTween);
+			
+			leftHandJointYDebug = tween(leftHandPrevJointYDebug, leftHandJointYDebugRecord, targetDebugTween);
+			leftHandRootYDebug = tween(leftHandPrevRootYDebug, leftHandRootYDebugRecord, targetDebugTween);
+			leftHandPalmYDebug = tween(leftHandPrevPalmYDebug, leftHandPalmYDebugRecord, targetDebugTween);
+			leftHandPalmZDebug = tween(leftHandPrevPalmZDebug, leftHandPalmZDebugRecord, targetDebugTween);
+
+			if (targetDebugTween >= 1)
+			{
+				targetDebugTween = 0;
+				rightHandTargetDebug = rightHandTargetDebugRecord;
+				leftHandTargetDebug = leftHandTargetDebugRecord;
+				rightLegTargetDebug = rightLegTargetDebugRecord;
+				leftLegTargetDebug = leftLegTargetDebugRecord;
+
+				rightHandJointYDebug = rightHandJointYDebugRecord;
+				rightHandRootYDebug = rightHandRootYDebugRecord;
+				rightHandPalmYDebug = rightHandPalmYDebugRecord;
+				rightHandPalmZDebug = rightHandPalmZDebugRecord;
+				
+				leftHandJointYDebug = leftHandJointYDebugRecord;
+				leftHandRootYDebug = leftHandRootYDebugRecord;
+				leftHandPalmYDebug = leftHandPalmYDebugRecord;
+				leftHandPalmZDebug = leftHandPalmZDebugRecord;
+
+				animating = ANIMATING_NONE;
+				debugPlayBack = false;
+			}
+		}
+
 		if (isWalking && animating == WALK)
 		{
 			// hmmmmmm maybe when walking hands should be gripped
@@ -1715,14 +1778,16 @@ namespace Robot
 
 	void handleKeyDownEvent(WPARAM key)
 	{
-		if (key == VK_TAB) // editor power ACTIVATE
+		// only no animation ongoing ka can enter debug mode
+		if (key == VK_TAB && animating == ANIMATING_NONE) // editor power ACTIVATE
 		{
 			inEditMode = !inEditMode;
 			return;
 		}
 
 		// FUTURE ENHANCE maybe can extend on this edit capabilities
-		if (inEditMode)
+		// only no animation ongoing ka can adjust le targets
+		if (inEditMode && animating == ANIMATING_NONE)
 		{
 			// all the keys are different set d
 			// F2 -> edit leftHandTarget, F3 -> edit rightHandTarget, F4 -> edit leftLegTarget, F5 -> edit rightLegTarget
@@ -1744,22 +1809,27 @@ namespace Robot
 
 			// taking pointer cuz wanna edit the values, not taking reference cuz we dk which one yet
 			Point3D* editingIKTarget;
+			Point3D* editingIKTargetPrev;
 			bool isLeft = false; // if isLeft we need to flip the z movement
 			switch (editModeTarget)
 			{
 			case Robot::EDIT_LEFT_HAND:
 				editingIKTarget = &leftHandTargetDebug;
+				editingIKTargetPrev = &leftHandPrevTargetDebug;
 				isLeft = true;
 				break;
 			case Robot::EDIT_RIGHT_HAND:
 				editingIKTarget = &rightHandTargetDebug;
+				editingIKTargetPrev = &rightHandPrevTargetDebug;
 				break;
 			case Robot::EDIT_LEFT_LEG:
 				editingIKTarget = &leftLegTargetDebug;
+				editingIKTargetPrev = &leftLegPrevTargetDebug;
 				isLeft = true;
 				break;
 			case Robot::EDIT_RIGHT_LEG:
 				editingIKTarget = &rightLegTargetDebug;
+				editingIKTargetPrev = &rightLegPrevTargetDebug;
 				break;
 			default:
 				return; // impossible reach here
@@ -1768,28 +1838,28 @@ namespace Robot
 			switch (key)
 			{
 			case 'W':
-				editingIKTarget->y += 0.5;
+				editingIKTargetPrev->y = editingIKTarget->y += 0.5;
 				break;
 			case 'S':
-				editingIKTarget->y -= 0.5;
+				editingIKTargetPrev->y = editingIKTarget->y -= 0.5;
 				break;
 			case 'A':
-				editingIKTarget -> z += isLeft ? -0.5 : 0.5;
+				editingIKTargetPrev->z = editingIKTarget -> z += isLeft ? -0.5 : 0.5;
 				break;
 			case 'D':
-				editingIKTarget->z -= isLeft ? -0.5 : 0.5;
+				editingIKTargetPrev-> z = editingIKTarget->z -= isLeft ? -0.5 : 0.5;
 				break;
 			}
 
 			// for leg targets, cannot go more than y == -2, so y must be < -2
 			if (leftLegTargetDebug.y >= -2)
 			{
-				leftLegTargetDebug.y = -2.5; // max -2.5 la
+				leftLegPrevTargetDebug.y = leftLegTargetDebug.y = -2.5; // max -2.5 la
 			}
 
 			if (rightLegTargetDebug.y >= -2)
 			{
-				rightLegTargetDebug.y = -2.5;
+				rightLegPrevTargetDebug.y = rightLegTargetDebug.y = -2.5;
 			}
 
 			// only for hand, rotate the rootY or jointY or the palm
@@ -1797,11 +1867,11 @@ namespace Robot
 			{
 				if (editModeTarget == EDIT_RIGHT_HAND)
 				{
-					rightHandJointYDebug += 1;
+					rightHandPrevJointYDebug = rightHandJointYDebug += 1;
 				}
 				else if (editModeTarget == EDIT_LEFT_HAND)
 				{
-					leftHandJointYDebug += 1;
+					leftHandPrevJointYDebug = leftHandJointYDebug += 1;
 				}
 			}
 
@@ -1809,11 +1879,11 @@ namespace Robot
 			{
 				if (editModeTarget == EDIT_RIGHT_HAND)
 				{
-					rightHandJointYDebug -= 1;
+					rightHandPrevJointYDebug = rightHandJointYDebug -= 1;
 				}
 				else if (editModeTarget == EDIT_LEFT_HAND)
 				{
-					leftHandJointYDebug -= 1;
+					leftHandPrevJointYDebug = leftHandJointYDebug -= 1;
 				}
 			}
 
@@ -1821,11 +1891,11 @@ namespace Robot
 			{
 				if (editModeTarget == EDIT_RIGHT_HAND)
 				{
-					rightHandRootYDebug += 1;
+					rightHandPrevRootYDebug = rightHandRootYDebug += 1;
 				}
 				else if (editModeTarget == EDIT_LEFT_HAND)
 				{
-					leftHandRootYDebug += 1;
+					leftHandPrevRootYDebug = leftHandRootYDebug += 1;
 				}
 			}
 
@@ -1833,11 +1903,11 @@ namespace Robot
 			{
 				if (editModeTarget == EDIT_RIGHT_HAND)
 				{
-					rightHandRootYDebug -= 1;
+					rightHandPrevRootYDebug = rightHandRootYDebug -= 1;
 				}
 				else if (editModeTarget == EDIT_LEFT_HAND)
 				{
-					leftHandRootYDebug -= 1;
+					leftHandPrevRootYDebug = leftHandRootYDebug -= 1;
 				}
 			}
 
@@ -1845,11 +1915,11 @@ namespace Robot
 			{
 				if (editModeTarget == EDIT_RIGHT_HAND)
 				{
-					rightHandPalmYDebug += 1;
+					rightHandPrevPalmYDebug = rightHandPalmYDebug += 1;
 				}
 				else if (editModeTarget == EDIT_LEFT_HAND)
 				{
-					leftHandPalmYDebug += 1;
+					leftHandPrevPalmYDebug = leftHandPalmYDebug += 1;
 				}
 			}
 
@@ -1857,11 +1927,11 @@ namespace Robot
 			{
 				if (editModeTarget == EDIT_RIGHT_HAND)
 				{
-					rightHandPalmYDebug -= 1;
+					rightHandPrevPalmYDebug = rightHandPalmYDebug -= 1;
 				}
 				else if (editModeTarget == EDIT_LEFT_HAND)
 				{
-					leftHandPalmYDebug -= 1;
+					leftHandPrevPalmYDebug = leftHandPalmYDebug -= 1;
 				}
 			}
 
@@ -1869,11 +1939,11 @@ namespace Robot
 			{
 				if (editModeTarget == EDIT_RIGHT_HAND)
 				{
-					rightHandPalmZDebug += 1;
+					rightHandPrevPalmZDebug = rightHandPalmZDebug += 1;
 				}
 				else if (editModeTarget == EDIT_LEFT_HAND)
 				{
-					leftHandPalmZDebug += 1;
+					leftHandPrevPalmZDebug = leftHandPalmZDebug += 1;
 				}
 			}
 
@@ -1881,11 +1951,11 @@ namespace Robot
 			{
 				if (editModeTarget == EDIT_RIGHT_HAND)
 				{
-					rightHandPalmZDebug -= 1;
+					rightHandPrevPalmZDebug = rightHandPalmZDebug -= 1;
 				}
 				else if (editModeTarget == EDIT_LEFT_HAND)
 				{
-					leftHandPalmZDebug -= 1;
+					leftHandPrevPalmZDebug = leftHandPalmZDebug -= 1;
 				}
 			}
 
@@ -1893,12 +1963,39 @@ namespace Robot
 			if (key == VK_SPACE)
 			{
 
-				rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y, rightHandRestTarget.z, { 255, 255, 255} };
-				leftHandTargetDebug = { leftHandRestTarget.x, leftHandRestTarget.y, leftHandRestTarget.z, { 255, 255, 255} };
-				rightLegTargetDebug = { rightLegRestTarget.x, rightLegRestTarget.y, rightLegRestTarget.z, { 255, 255, 255} };
-				leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
-				rightHandJointYDebug = rightHandRootYDebug = rightHandPalmYDebug = rightHandPalmZDebug = 0;
-				leftHandJointYDebug = leftHandRootYDebug = leftHandPalmYDebug = leftHandPalmZDebug = 0;
+				rightHandPrevTargetDebug = rightHandTargetDebug = { rightHandRestTarget.x, rightHandRestTarget.y, rightHandRestTarget.z, { 255, 255, 255} };
+				leftHandPrevTargetDebug = leftHandTargetDebug = { leftHandRestTarget.x, leftHandRestTarget.y, leftHandRestTarget.z, { 255, 255, 255} };
+				rightLegPrevTargetDebug = rightLegTargetDebug = { rightLegRestTarget.x, rightLegRestTarget.y, rightLegRestTarget.z, { 255, 255, 255} };
+				leftLegPrevTargetDebug = leftLegTargetDebug = { leftLegRestTarget.x, leftLegRestTarget.y, leftLegRestTarget.z, { 255, 255, 255} };
+				rightHandPrevJointYDebug = rightHandPrevRootYDebug = rightHandPrevPalmYDebug = rightHandPrevPalmZDebug = 
+					rightHandJointYDebug = rightHandRootYDebug = rightHandPalmYDebug = rightHandPalmZDebug = 0;
+				leftHandPrevJointYDebug = leftHandPrevRootYDebug = leftHandPrevPalmYDebug = leftHandPrevPalmZDebug = 
+					leftHandJointYDebug = leftHandRootYDebug = leftHandPalmYDebug = leftHandPalmZDebug = 0;
+			}
+
+			// recording and playback (rn only support record one point)
+			switch (key)
+			{
+			case 'R':
+				rightHandTargetDebugRecord = rightHandTargetDebug;
+				leftHandTargetDebugRecord = leftHandTargetDebug;
+				rightLegTargetDebugRecord = rightLegTargetDebug;
+				leftLegTargetDebugRecord = leftLegTargetDebug;
+
+				rightHandJointYDebugRecord = rightHandJointYDebug;
+				rightHandRootYDebugRecord = rightHandRootYDebug;
+				rightHandPalmYDebugRecord = rightHandPalmYDebug;
+				rightHandPalmZDebugRecord = rightHandPalmZDebug;
+
+				leftHandJointYDebugRecord = leftHandJointYDebug;
+				leftHandRootYDebugRecord = leftHandRootYDebug;
+				leftHandPalmYDebugRecord = leftHandPalmYDebug;
+				leftHandPalmZDebugRecord = leftHandPalmZDebug;
+				break;
+			case VK_OEM_PERIOD: // play back (tween from prev target to recorded target) the full stop key
+				debugPlayBack = true;
+				animating = DEBUG_PLAYBACK;
+				break;
 			}
 
 			return;

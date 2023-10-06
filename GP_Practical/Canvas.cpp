@@ -862,8 +862,10 @@ Canvas& Canvas::setProjection(ProjectionMode p)
 	// kena translate the whole thing away so it won't kena cut off by near plane if projection mode is perspective
     if (p == ProjectionMode::PERSPECTIVE)
     {
+        // push the object away since the near clipping pane starts at z = 1
+        //glTranslatef(0, 0, -2);
 		gluLookAt(0, 0, 2, 0, 0, 0, 0, 1, 0); // look at the origin from z = 2 since clipping pane is at z = 1
-        // gluLookAt just easier help us calculate need translate how much
+        // gluLookAt just easier help us calculate need translate how much, but thru working it out this also just translates the object inside nia
     }
 
     return *this;
