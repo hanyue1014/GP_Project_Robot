@@ -240,6 +240,9 @@ void handleKeyDownEvent(WPARAM key)
 		case 'Q': // move camera near
 			cameraTrans.transZ += 0.5;
 			return;
+		case VK_SPACE: // reset camera
+			cameraTrans = Transform();
+			return;
 		}
 	}
 
