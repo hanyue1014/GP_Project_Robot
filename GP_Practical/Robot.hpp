@@ -1129,15 +1129,15 @@ namespace Robot
 			}
 			else if (walkingAnimationIndex > 4 && walkingAnimationIndex <= 9)
 			{
-				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(maxBodyWalkRotation, 0, (walkingAnimationIndex - 4) / 5.0);
+				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(maxBodyWalkRotation, 0, (walkingAnimationIndex - 4.0) / 5.0);
 			}
 			else if (walkingAnimationIndex > 9 && walkingAnimationIndex <= 14)
 			{
-				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(0, -maxBodyWalkRotation, (walkingAnimationIndex - 9) / 5.0);
+				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(0, -maxBodyWalkRotation, (walkingAnimationIndex - 9.0) / 5.0);
 			}
 			else 
 			{
-				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(-maxBodyWalkRotation, 0, (walkingAnimationIndex - 14) / 5.0);
+				lastRotationBeforeStopWalking = bodyCurrentWalkRotation = tween(-maxBodyWalkRotation, 0, (walkingAnimationIndex - 14.0) / 5.0);
 			}
 
 			if (walkingTweenProgress >= 1)
