@@ -2109,6 +2109,7 @@ namespace Robot
 			.translate(2, 7, 0)
 			.rotate(20, 0, 0, 1)
 			.cuboid({ -0.5, 0.5, 0.5, lineOrJoint }, { 3.5, -0.5, -0.5 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.popMatrix()
 			;
 
@@ -2119,6 +2120,7 @@ namespace Robot
 			.translate(2, 7, 0)
 			.rotate(20, 0, 0, 1)
 			.cuboid({ -0.5, 0.5, 0.5, lineOrJoint }, { 3.5, -0.5, -0.5 })
+			.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 			.popMatrix()
 			;
 
