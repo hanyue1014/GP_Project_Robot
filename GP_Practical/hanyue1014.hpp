@@ -13,9 +13,11 @@ namespace Robot
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
 	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR };
 	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_SWING_OVERSHOOT, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
-	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, CHARGE_KAMEKAMEHA, DEBUG_PLAYBACK, ANIMATING_NONE };
+	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, HAMMER_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ATTACK_WITH_HAMMER, CHARGE_KAMEKAMEHA, DEBUG_PLAYBACK, ANIMATING_NONE };
 	enum EditModeEditTargets { EDIT_LEFT_HAND, EDIT_RIGHT_HAND, EDIT_LEFT_LEG, EDIT_RIGHT_LEG };
 	enum KamekamehaChargeProgress { KKH_NONE, KKH_LOW, KKH_MEDIUM, KKH_HIGH, KKH_SHOOT, KKH_SHOOTING };
+	enum HammerAnimStates { HAMMER_FLYOUT, HAMMER_UNGRIPPING, HAMMER_FLYIN, HAMMER_GRIPPING, HAMMER_EQUIPPED, HAMMER_UNEQUIPPED };
+	enum AttackWithHammerAnimState { HAMMER_ATK_START_SWING, HAMMER_ATK_FINISH_SWING, HAMMER_ATK_SWING_OVERSHOOT, HAMMER_ATK_IDLE };
 
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
@@ -96,6 +98,7 @@ namespace Robot
 				.rotate(rootAngle, 0, 0, pos == POSITION_RIGHT ? -1 : 1)
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 0.125)
 				.cuboid({ -0.125, -0.125, 0.125, {255, 255, 0} }, { 0.125, -(0.125f + topLength), -0.125 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				;
 
 			// bottom part
@@ -105,6 +108,7 @@ namespace Robot
 				.rotate(jointAngle, 0, 0, pos == POSITION_RIGHT ? -1 : 1)
 				.sphere({ 0, 0, 0, {255, 0, 0} }, 0.125)
 				.cuboid({ -0.125, -0.125, 0.125, {255, 255, 0} }, { 0.125, -(0.125f + botLength), -0.125 })
+				.replotPrevBlocky3D(GL_LINE_LOOP, outline)
 				.popMatrix()
 				;
 
@@ -158,6 +162,9 @@ namespace Robot
 	GripAngles kamekamehaGrip(0, 0, 0, 0);
 
 	SwordAnimStates swordState = SWORD_UNEQUIP_IDLE;
+	HammerAnimStates hammerState = HAMMER_UNEQUIPPED;
+	float hammerAnimTranslateZ = 0, hammerAnimFlyInFromFlyOutTo = 15; // add this value to make it fly out
+
 	class Hand
 	{
 	private:
@@ -320,6 +327,21 @@ namespace Robot
 					.rotate(90, 1, 0, 0)
 					;
 				SoonChee::sword();
+				cv.popMatrix();
+			}
+
+			// hammer only equipped on left hand
+			if ((hammerState == HAMMER_EQUIPPED || hammerState == HAMMER_FLYIN || hammerState == HAMMER_FLYOUT) && pos == POSITION_LEFT)
+			{
+				cv.pushMatrix();
+				cv
+					.translate(0, 0, hammerAnimTranslateZ)
+					.translate(0, -1.1, 2)
+					.rotate(90, 0, 0, 1)
+					.rotate(90, 1, 0, 0)
+					.scale(0.25, 0.5, 0.3)
+					;
+				SoonChee::hammer();
 				cv.popMatrix();
 			}
 
@@ -849,6 +871,7 @@ namespace Robot
 	Transform swordUnequipFlyOutDest;
 	Transform swordUnequipAnim; // also used for idle states
 	Transform swordUnequipFlyInFrom;
+	Point3D hammerEquipUnequipHandTarget = { leftHandRestTarget.x, 10, 7 };
 
 	// cuz cannot execute set value outside of a function
 	void initWeaponRestAndOriStates()
@@ -881,7 +904,9 @@ namespace Robot
 	bool setSwordEquip = false;
 	float swordTween = 0;
 
-	int attackWithSwordTargetIndex = 0;
+	bool setHammerEquip = false;
+	float hammerTween = 0;
+
 	Point3D attackWithSwordVerStartSwingTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 9.0f, rightHandRestTarget.z + 8.0f }; // start swinging target
 	Point3D attackWithSwordVerSwingTillTarget = { rightHandRestTarget.x, rightHandRestTarget.y + 2.5f, rightHandRestTarget.z + 8.0f }; // max forward swing action
 	Point3D attackWithSwordVerSwingOvershootTarget = { rightHandRestTarget.x, rightHandRestTarget.y - 1.0f, rightHandRestTarget.z - 6.0f }; // max forward swing action
@@ -919,6 +944,14 @@ namespace Robot
 	float kkhTopRad = 3, kkhPrevTopRad = 0;
 	bool kamekamehaCharging = false;
 	float kkhTween = 0;
+
+	Point3D attackWithHammerStartSwingTarget = { leftHandRestTarget.x, 8, 4 };
+	Point3D attackWithHammerSwingTillTarget = { leftHandRestTarget.x, 1, 6 };
+	Point3D attackWithHammerOvershootTarget = { leftHandRestTarget.x, -3, -4 };
+
+	bool attackWithHammer = false;
+	float attackWithHammerTween = 0;
+	AttackWithHammerAnimState attackHammerState = HAMMER_ATK_IDLE;
 
 	void main()
 	{
@@ -1242,6 +1275,99 @@ namespace Robot
 			}
 		}
 
+		// hammer won't float around when unequipped, so can still equip/unequip when unequipped weapons are hidden
+		if (setHammerEquip)
+		{
+			if (hammerState == HAMMER_UNEQUIPPED)
+			{
+				// move left hand to target first
+				leftHandCurrentTarget = tween(leftHandRestTarget, hammerEquipUnequipHandTarget, hammerTween += 0.05);
+				if (hammerTween >= 1)
+				{
+					hammerTween = 0;
+					leftHandCurrentTarget = hammerEquipUnequipHandTarget;
+					hammerState = HAMMER_FLYIN;
+				}
+			}
+			if (hammerState == HAMMER_FLYIN)
+			{
+				hammerAnimTranslateZ = tween(hammerAnimFlyInFromFlyOutTo, 0, hammerTween += 0.05);
+				if (hammerTween >= 1)
+				{
+					hammerTween = 0;
+					hammerAnimTranslateZ = 0;
+					hammerState = HAMMER_EQUIPPED;
+				}
+			}
+			if (hammerState == HAMMER_EQUIPPED && animating == HAMMER_EQUIP_UNEQUIP)
+			{
+				if (!leftHand.isGripping())
+				{
+					leftHandShouldGrip = true;
+					leftHandGripType = GRIP_FULL;
+				}
+				else if (leftHand.isGripping() && leftHandCurrentTarget != leftHandRestTarget)
+				{
+					// go back rest target
+					leftHandCurrentTarget = tween(hammerEquipUnequipHandTarget, leftHandRestTarget, hammerTween += 0.05);
+					if (hammerTween >= 1)
+					{
+						hammerTween = 0;
+						leftHandCurrentTarget = leftHandRestTarget;
+						animating = ANIMATING_NONE;
+					}
+				}
+			}
+		}
+		// unequip hammer
+		if (!setHammerEquip)
+		{
+			if (hammerState == HAMMER_EQUIPPED)
+			{
+				// move to release position and ungrip
+				if (leftHandCurrentTarget != hammerEquipUnequipHandTarget)
+				{
+					leftHandCurrentTarget = tween(leftHandRestTarget, hammerEquipUnequipHandTarget, hammerTween += 0.05);
+					if (hammerTween >= 1)
+					{
+						hammerTween = 0;
+						leftHandCurrentTarget = hammerEquipUnequipHandTarget;
+						hammerState = HAMMER_FLYOUT;
+					}
+				}
+			}
+
+			if (hammerState == HAMMER_FLYOUT)
+			{
+				if (leftHand.isGripping())
+				{
+					leftHandShouldGrip = false;
+				}
+				else
+				{
+					hammerAnimTranslateZ = tween(0, hammerAnimFlyInFromFlyOutTo, hammerTween += 0.05);
+					if (hammerTween >= 1)
+					{
+						hammerTween = 0;
+						hammerAnimTranslateZ = hammerAnimFlyInFromFlyOutTo;
+						hammerState = HAMMER_UNEQUIPPED;
+					}
+				}
+			}
+
+			if (hammerState == HAMMER_UNEQUIPPED && animating == HAMMER_EQUIP_UNEQUIP)
+			{
+				// go back rest target
+				leftHandCurrentTarget = tween(hammerEquipUnequipHandTarget, leftHandRestTarget, hammerTween += 0.05);
+				if (hammerTween >= 1)
+				{
+					hammerTween = 0;
+					leftHandCurrentTarget = leftHandRestTarget;
+					animating = ANIMATING_NONE;
+				}
+			}
+		}
+
 		// when equipping flying in, also need to show this
 		if (swordState == SWORD_UNEQUIP_FLYOUT || swordState == SWORD_EQUIP_FLYIN)
 		{
@@ -1439,6 +1565,63 @@ namespace Robot
 		else if (attackWithSword && swordState != SWORD_EQUIPPED) // prob sword not equipped, free up the animating space to let others animate
 		{
 			attackWithSword = false;
+			animating = ANIMATING_NONE;
+		}
+
+		if (attackWithHammer && hammerState == HAMMER_EQUIPPED && animating == ATTACK_WITH_HAMMER)
+		{
+			if (attackHammerState == HAMMER_ATK_IDLE)
+			{
+				// move hand to pre swing target
+				leftHandCurrentTarget = tween(leftHandRestTarget, attackWithHammerStartSwingTarget, attackWithHammerTween += 0.05);
+				if (attackWithHammerTween >= 1)
+				{
+					attackWithHammerTween = 0;
+					leftHandCurrentTarget = attackWithHammerStartSwingTarget;
+					attackHammerState = HAMMER_ATK_START_SWING;
+				}
+			}
+
+			if (attackHammerState == HAMMER_ATK_START_SWING)
+			{
+				// move hand to swing till target
+				leftHandCurrentTarget = tween(attackWithHammerStartSwingTarget, attackWithHammerSwingTillTarget, attackWithHammerTween += 0.09);
+				if (attackWithHammerTween >= 1)
+				{
+					attackWithHammerTween = 0;
+					leftHandCurrentTarget = attackWithHammerSwingTillTarget;
+					attackHammerState = HAMMER_ATK_FINISH_SWING;
+				}
+			}
+
+			if (attackHammerState == HAMMER_ATK_FINISH_SWING)
+			{
+				// move hand to overshoot
+				leftHandCurrentTarget = tween(attackWithHammerSwingTillTarget, attackWithHammerOvershootTarget, attackWithHammerTween += 0.09);
+				if (attackWithHammerTween >= 1)
+				{
+					attackWithHammerTween = 0;
+					leftHandCurrentTarget = attackWithHammerOvershootTarget;
+					attackHammerState = HAMMER_ATK_SWING_OVERSHOOT;
+				}
+			}
+
+			if (attackHammerState == HAMMER_ATK_SWING_OVERSHOOT)
+			{
+				leftHandCurrentTarget = tween(attackWithHammerOvershootTarget, leftHandRestTarget, attackWithHammerTween += 0.05);
+				if (attackWithHammerTween >= 1)
+				{
+					attackWithHammerTween = 0;
+					leftHandCurrentTarget = leftHandRestTarget;
+					attackHammerState = HAMMER_ATK_IDLE;
+					animating = ANIMATING_NONE;
+					attackWithHammer = false;
+				}
+			}
+		}
+		else if (attackWithHammer && hammerState != HAMMER_EQUIPPED)
+		{
+			attackWithHammer = false;
 			animating = ANIMATING_NONE;
 		}
 
@@ -2012,19 +2195,31 @@ namespace Robot
 		case 'G':
 			shouldGrip = !shouldGrip;
 			break;
-		case 'D': // defense
+		case '1': // defense
 			// only not hiding unequipped weapon baru can activate defense
 			if ((animating != ANIMATING_NONE && animating != SHIELD) || hideUnequippedWeapon || swordState == SWORD_EQUIPPED) // shudnt hold and shudnt be able to be toggled when sword is equipped
 				break;
 			animating = SHIELD;
 			setShieldActive = !setShieldActive;
 			break;
-		case 'S':
+		case '2':
 			// only can equip / unequip sword when the sword is shown
 			if (animating != ANIMATING_NONE || hideUnequippedWeapon) // only finish equip/unequipn ka can execute again
 				break;
 			animating = SWORD_EQUIP_UNEQUIP;
 			setSwordEquip = !setSwordEquip;
+			break;
+		case '3':
+			if (animating != ANIMATING_NONE)
+				break;
+			animating = HAMMER_EQUIP_UNEQUIP;
+			setHammerEquip = !setHammerEquip;
+			break;
+		case '4':
+			if (animating != ANIMATING_NONE)
+				break;
+			animating = ATTACK_WITH_HAMMER;
+			attackWithHammer = true;
 			break;
 		case 'A': // attack with sword
 			if (animating != ANIMATING_NONE) // only ntg animating only can attack with sword
