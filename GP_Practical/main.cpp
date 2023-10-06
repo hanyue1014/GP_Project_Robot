@@ -281,10 +281,10 @@ void handleKeyDownEvent(WPARAM key)
 		debugTrans.rotY = 1;
 		return;
 	case VK_UP:
-		debugTrans2.rotAngle -= 1;
+		debugTrans2.rotAngle += 1;
 		return;
 	case VK_DOWN:
-		debugTrans2.rotAngle += 1;
+		debugTrans2.rotAngle -= 1;
 		return;
 	}
 
