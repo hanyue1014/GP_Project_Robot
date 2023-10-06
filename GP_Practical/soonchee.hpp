@@ -717,25 +717,25 @@ namespace SoonChee
 
 		glPushMatrix();
 		glTranslatef(0.05, 0.4, 0);
-		glColor3f(0.5, 0.5, 0.5);
+		glColor3f(0.7, 0.7, 0.7);
 		rect(0.3);
 		glPopMatrix();
 		glPushMatrix();
 		glTranslatef(0.275, 0.4, 0);
 		glRotatef(90, 0, 0, 1);
-		glColor3f(0.5, 0.5, 0.5);
+		glColor3f(0.7, 0.7, 0.7);
 		rect(0.3);
 		glPopMatrix();
 		glPushMatrix();
 		glTranslatef(0.275, 0.1, 0);
 		glRotatef(90, 0, 0, 1);
-		glColor3f(0.5, 0.5, 0.5);
+		glColor3f(0.7, 0.7, 0.7);
 		rect(0.3);
 		glPopMatrix();
 		glPopMatrix();
 
 		//glClearColor(1, 1, 1, 1);
-		//glColor3f(1, 0.5, 1);
+		glColor3f(1, 1, 1);
 		glBegin(GL_QUADS);
 		//bottom face 1
 		glTexCoord2f(0.0f, 1.0f);
@@ -865,7 +865,7 @@ namespace SoonChee
 		//shield
 		glPushMatrix();
 		glTranslatef(0, -0.5, 0);
-		//glColor3f(1, 1,1);
+		glColor3f(0.2, 0.2,0.2);
 		GLuint textureArr[1];
 		textureArr[0] = loadTexture("shield.bmp");
 		drawShield(0.4, 0.1);
