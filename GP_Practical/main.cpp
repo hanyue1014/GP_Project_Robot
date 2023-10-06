@@ -5,14 +5,13 @@
 #include "Canvas.h"
 #include "Transform.h"
 #include "Util.h"
-#include "hanyue1014.hpp"
-#include "soonchee.hpp"
-#include "yikit.hpp"
+#include "Robot.hpp"
+#include "WeaponBackground.hpp"
 
 #pragma comment (lib, "OpenGL32.lib")
 #pragma comment (lib, "GLU32.lib")
 
-#define WINDOW_TITLE "OpenGL Window"
+#define WINDOW_TITLE "Pacific Robot"
 #define WIN_WIDTH 800
 #define WIN_HEIGHT 800
 
@@ -130,7 +129,7 @@ bool initPixelFormat(HDC hdc)
 Canvas cv(20, 20, 20);
 
 ProjectionMode projectionMode = ORTHO;
-bool debug = true;
+bool debug = false;
 Transform debugTrans;
 Transform debugTrans2;
 Transform cameraTrans;
@@ -197,14 +196,7 @@ void display()
 
 	lighting();
 
-	// cv.rotate(0.01, 1, 1, 1);
-	//cv.cuboid({ 0, 0, 0, {255, 0, 0} }, { 5, 5, 5, {255, 255, 0}})
 	Robot::main();
-	//Robot::Leg({ 0, 0, 0 }).draw();
-	//Robot::Hand({ 0, 0, 0 }).draw();
-	//Robot::Head();
-	//Robot::Finger({ 0, 0, 0 }).draw();
-	//SoonChee::sword();
 	if (debug)
 		cv.showDebugGrid();
 	cv.popMatrix();

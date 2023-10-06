@@ -3,8 +3,8 @@
 #include "Canvas.h"
 #include "Transform.h"
 #include "Util.h"
-#include "soonchee.hpp"
-#include "yikit.hpp"
+#include "WeaponBackground.hpp"
+#include "WeaponGun.hpp"
 
 namespace Robot
 {

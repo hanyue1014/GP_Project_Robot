@@ -134,11 +134,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Canvas.h" />
-    <ClInclude Include="hanyue1014.hpp" />
-    <ClInclude Include="soonchee.hpp" />
+    <ClInclude Include="Robot.hpp" />
+    <ClInclude Include="WeaponBackground.hpp" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Util.h" />
-    <ClInclude Include="yikit.hpp" />
+    <ClInclude Include="WeaponGun.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\Desktop\Assignment\Assignment\metal.bmp" />
