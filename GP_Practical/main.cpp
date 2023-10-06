@@ -7,6 +7,7 @@
 #include "Util.h"
 #include "hanyue1014.hpp"
 #include "soonchee.hpp"
+#include "yikit.hpp"
 
 #pragma comment (lib, "OpenGL32.lib")
 #pragma comment (lib, "GLU32.lib")
@@ -134,11 +135,17 @@ Transform debugTrans;
 Transform debugTrans2;
 Transform cameraTrans;
 bool inCameraTranslateMode = false;
+bool activateGreenScreen = false;
 
-float dif[] = { 1.0,1.0,1.0 };   //Green color diffuse light
+enum SelectedLightColor { LIGHT_RED, LIGHT_GREEN, LIGHT_BLUE };
+
+// environment ambient light (some what cold color)
+float amb[] = { 0.1, 0.1, 0.3 };
+float intensity[] = { 1.0,1.0,1.0 };   //Green color diffuse light
 float pos[] = { 0.0,0.0,1.0 };   //dif light pos (1,0,0) right sphere
 bool isLightOn = false;
 bool editingLight = false;
+SelectedLightColor editingColor = LIGHT_RED;
 
 void lighting()
 {
@@ -146,14 +153,15 @@ void lighting()
 	{
 		glEnable(GL_LIGHTING);  //enable the lighting for the whole scene
 		glEnable(GL_COLOR_MATERIAL);
-		//Light 0: Ambient light
-		glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+		//Light 0: Ambient + DIFFUSE light
+		glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, intensity);
 		glLightfv(GL_LIGHT0, GL_POSITION, pos);
 		glEnable(GL_LIGHT0);
 
 		if (editingLight)
 		{
-			glColor3f(dif[0], dif[1], dif[2]);
+			glColor3f(intensity[0], intensity[1], intensity[2]);
 			glPointSize(20);
 			glBegin(GL_POINTS);
 			glVertex3f(pos[0], pos[1], pos[2]);
@@ -166,24 +174,28 @@ void lighting()
 	}
 }
 
-
 void display()
 {
-	// grayish color easier to see stuff
-	cv.clear({50, 50, 50});
-	
-	lighting();
+	// green color let editor easier to key out
+	cv.clear({0, 255, 0}).loadIdentity();
 
 	cv.setProjection(projectionMode);
-	
-	if (projectionMode == ORTHO)
-		SoonChee::orthoBackground();
-	else
-		SoonChee::perspectiveBackground();
+
+	if (!activateGreenScreen)
+	{
+		if (projectionMode == ORTHO)
+			WeaponProjectionBackground::orthoBackground();
+		else
+			WeaponProjectionBackground::perspectiveBackground();
+	}
+
 	cv
+		.pushMatrix()
 		.translate(cameraTrans.transX, cameraTrans.transY, cameraTrans.transZ)
 		.rotate(debugTrans2.rotAngle, 1, 0, 0)
 		.rotate(debugTrans.rotAngle, debugTrans.rotX, debugTrans.rotY, debugTrans.rotZ);
+
+	lighting();
 
 	// cv.rotate(0.01, 1, 1, 1);
 	//cv.cuboid({ 0, 0, 0, {255, 0, 0} }, { 5, 5, 5, {255, 255, 0}})
@@ -195,11 +207,18 @@ void display()
 	//SoonChee::sword();
 	if (debug)
 		cv.showDebugGrid();
+	cv.popMatrix();
 }
 
 // event handling
 void handleKeyDownEvent(WPARAM key)
 {
+	if (key == VK_OEM_2) // the '/' key
+	{
+		activateGreenScreen = !activateGreenScreen;
+		return;
+	}
+
 	// press 0 to toggle move camera mode
 	if (key == '0')
 	{
@@ -309,6 +328,35 @@ void handleKeyDownEvent(WPARAM key)
 		case 'Q': // move light out
 			pos[2] += 0.01;
 			break;
+		case 'R':
+			editingColor = LIGHT_RED;
+			break;
+		case 'G':
+			editingColor = LIGHT_GREEN;
+			break;
+		case 'B':
+			editingColor = LIGHT_BLUE;
+			break;
+		}
+
+		int editingColorIdx;
+		if (editingColor == LIGHT_RED)
+			editingColorIdx = 0;
+		else if (editingColor == LIGHT_GREEN)
+			editingColorIdx = 1;
+		else
+			editingColorIdx = 2;
+
+		if (key == VK_OEM_PLUS)
+		{
+			if (intensity[editingColorIdx] < 1)
+				intensity[editingColorIdx] += 0.1;
+		}
+
+		if (key == VK_OEM_MINUS)
+		{
+			if (intensity[editingColorIdx] > 0)
+				intensity[editingColorIdx] -= 0.1;
 		}
 
 		return;

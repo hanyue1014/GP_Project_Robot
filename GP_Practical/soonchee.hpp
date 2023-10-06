@@ -12,7 +12,7 @@
 BITMAP BMP;             //bitmap structure
 HBITMAP hBMP = NULL;    //bitmap handle
 
-namespace SoonChee
+namespace WeaponProjectionBackground
 {
 	GLuint loadTexture(LPCSTR filename)
 	{

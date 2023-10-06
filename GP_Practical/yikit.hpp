@@ -7,7 +7,7 @@
 #pragma comment (lib, "OpenGL32.lib")
 #pragma comment (lib, "GLU32.lib")
 
-namespace YiKit
+namespace WeaponGun
 {
 	
 	void cuboid()

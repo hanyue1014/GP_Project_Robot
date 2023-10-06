@@ -14,12 +14,14 @@ namespace Robot
 	enum SwordAnimStates { SWORD_UNEQUIP_FLYOUT, SWORD_UNEQUIP_FLYIN, SWORD_UNEQUIP_IDLE, SWORD_EQUIP_FLYOUT, SWORD_EQUIP_FLYIN, SWORD_EQUIPPED };
 	enum SwordAttackTypes { SWORD_ATK_VER, SWORD_ATK_HOR };
 	enum AttackWithSwordAnimState { SWORD_ATK_START_SWING, SWORD_ATK_FINISH_SWING, SWORD_ATK_SWING_OVERSHOOT, SWORD_ATK_IDLE }; // start swing is first half, finish swing is second half, idle means nothing is animating
-	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, HAMMER_EQUIP_UNEQUIP, GUN_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ATTACK_WITH_HAMMER, CHARGE_KAMEKAMEHA, DEBUG_PLAYBACK, ANIMATING_NONE };
+	enum NowAnimating { WALK, SWORD_EQUIP_UNEQUIP, HAMMER_EQUIP_UNEQUIP, GUN_EQUIP_UNEQUIP, SHIELD, ATTACK_WITH_SWORD, ATTACK_WITH_HAMMER, ATTACK_WITH_GUN, CHARGE_KAMEKAMEHA, DEBUG_PLAYBACK, ANIMATING_NONE };
 	enum EditModeEditTargets { EDIT_LEFT_HAND, EDIT_RIGHT_HAND, EDIT_LEFT_LEG, EDIT_RIGHT_LEG };
 	enum KamekamehaChargeProgress { KKH_NONE, KKH_LOW, KKH_MEDIUM, KKH_HIGH, KKH_SHOOT, KKH_SHOOTING };
 	enum HammerAnimStates { HAMMER_FLYOUT, HAMMER_UNGRIPPING, HAMMER_FLYIN, HAMMER_GRIPPING, HAMMER_EQUIPPED, HAMMER_UNEQUIPPED };
 	enum AttackWithHammerAnimState { HAMMER_ATK_START_SWING, HAMMER_ATK_FINISH_SWING, HAMMER_ATK_SWING_OVERSHOOT, HAMMER_ATK_IDLE };
 	enum GunAnimStates { GUN_EQUIPPING, GUN_UNEQUIPPING, GUN_EQUIPPED, GUN_UNEQUIPPED };
+	enum GunShootingStates { GUN_RECOIL, GUN_READY };
+	enum GunShootHand { LEFT_GUN, RIGHT_GUN };
 
 	// no need create canvas everytime
 	Canvas cv(20, 20, 20);
@@ -330,7 +332,7 @@ namespace Robot
 					.rotate(90, 0, 0, 1)
 					.rotate(90, 1, 0, 0)
 					;
-				SoonChee::sword();
+				WeaponProjectionBackground::sword();
 				cv.popMatrix();
 			}
 
@@ -345,7 +347,7 @@ namespace Robot
 					.rotate(90, 1, 0, 0)
 					.scale(0.25, 0.5, 0.3)
 					;
-				SoonChee::hammer();
+				WeaponProjectionBackground::hammer();
 				cv.popMatrix();
 			}
 
@@ -360,7 +362,7 @@ namespace Robot
 					.scale(0.2, 0.2, 0.1)
 					;
 
-				YiKit::display();
+				WeaponGun::display();
 
 				cv.popMatrix();
 			}
@@ -976,6 +978,22 @@ namespace Robot
 	float attackWithHammerTween = 0;
 	AttackWithHammerAnimState attackHammerState = HAMMER_ATK_IDLE;
 
+	bool gunShoot = false;
+	float leftGunShootTween = 0;
+	float leftGunRecoilTween = 0;
+	float rightGunShootTween = 0;
+	float rightGunRecoilTween = 0;
+	float stopGunShootTween = 0;
+	GunShootingStates leftGunShootingState = GUN_READY;
+	GunShootingStates rightGunShootingState = GUN_READY;
+	GunShootHand currentGun = LEFT_GUN;
+	Point3D leftGunRecoilTarget = { leftHandRestTarget.x, 6, 4 };
+	Point3D rightGunRecoilTarget = { rightHandRestTarget.x, 6, 4 };
+	Point3D leftGunPrevTarget = leftHandRestTarget;
+	Point3D rightGunPrevTarget = rightHandRestTarget;
+	Transform leftGunBullet;
+	Transform rightGunBullet;
+
 	void main()
 	{
 		if (debugPlayBack && inEditMode && animating == DEBUG_PLAYBACK)
@@ -1496,7 +1514,7 @@ namespace Robot
 				.rotate(90, 0, 1, 0)
 				.rotate(30, -1, 0, 0)
 				;
-			SoonChee::sword();
+			WeaponProjectionBackground::sword();
 			cv.popMatrix();
 		}
 
@@ -1550,7 +1568,7 @@ namespace Robot
 				.translate(0, 9, -4)
 				.rotate(180, 0, 0, 1)
 				;
-			SoonChee::sword();
+			WeaponProjectionBackground::sword();
 			cv.popMatrix();
 		}
 		}
@@ -1930,6 +1948,83 @@ namespace Robot
 				;
 		}
 
+		if (gunShoot && gunState == GUN_EQUIPPED)
+		{
+			// even though both gun can technically be ready at the same time, only one gun should shoot
+			if (leftGunShootingState == GUN_READY)
+			{
+				leftGunPrevTarget = leftHandCurrentTarget = tween(leftHandGunEquipUnequipTarget, leftGunRecoilTarget, leftGunShootTween += 0.05);
+
+				currentGun = LEFT_GUN;
+
+				if (leftGunShootTween >= 1)
+				{
+					leftGunShootTween = 0;
+					leftGunPrevTarget = leftHandCurrentTarget = leftGunRecoilTarget;
+					leftGunShootingState = GUN_RECOIL;
+				}
+			}
+			
+			if (rightGunShootingState == GUN_READY && leftGunShootingState != GUN_READY) 
+			{
+				rightGunPrevTarget = rightHandCurrentTarget = tween(rightHandGunEquipUnequipTarget, rightGunRecoilTarget, rightGunShootTween += 0.05);
+
+				currentGun = RIGHT_GUN;
+
+				if (rightGunShootTween >= 1)
+				{
+					rightGunShootTween = 0;
+					rightGunPrevTarget = rightHandCurrentTarget = rightGunRecoilTarget;
+					rightGunShootingState = GUN_RECOIL;
+				}
+			}
+
+			if (leftGunShootingState == GUN_RECOIL)
+			{
+				leftGunPrevTarget = leftHandCurrentTarget = tween(leftGunRecoilTarget, leftHandGunEquipUnequipTarget, leftGunRecoilTween += 0.05);
+
+				if (leftGunRecoilTween >= 1)
+				{
+					// reset gun shoot tween
+					leftGunRecoilTween = 0;
+					leftGunPrevTarget = leftHandCurrentTarget = leftHandGunEquipUnequipTarget;
+					leftGunShootingState = GUN_READY;
+				}
+			} 
+			if (rightGunShootingState == GUN_RECOIL)
+			{
+				rightGunPrevTarget = rightHandCurrentTarget = tween(rightGunRecoilTarget, rightHandGunEquipUnequipTarget, rightGunRecoilTween += 0.05);
+
+				if (rightGunRecoilTween >= 1)
+				{
+					// reset gun shoot tween
+					rightGunRecoilTween = 0;
+					rightGunPrevTarget = rightHandCurrentTarget = rightHandGunEquipUnequipTarget;
+					rightGunShootingState = GUN_READY;
+				}
+			}
+
+		}
+		else if (gunShoot && gunState != GUN_EQUIPPED)
+		{
+			animating = ANIMATING_NONE;
+			gunShoot = false;
+		}
+
+		if (!gunShoot && animating == ATTACK_WITH_GUN)
+		{
+			// tween back the hands to normal equipped state and set animating to none to free up animation slot
+			leftHandCurrentTarget = tween(leftGunPrevTarget, leftHandGunEquipUnequipTarget, stopGunShootTween += 0.05);
+			rightHandCurrentTarget = tween(rightGunPrevTarget, rightHandGunEquipUnequipTarget, stopGunShootTween);
+			if (stopGunShootTween >= 1)
+			{
+				leftHandCurrentTarget = leftHandGunEquipUnequipTarget;
+				rightHandCurrentTarget = rightHandGunEquipUnequipTarget;
+				stopGunShootTween = 0;
+				animating = ANIMATING_NONE;
+			}
+		}
+
 		// arm joint to body
 		// right
 		cv
@@ -1960,7 +2055,7 @@ namespace Robot
 			cv.translate(shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
 			cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
 
-			SoonChee::shield(shieldActivated, false);
+			WeaponProjectionBackground::shield(shieldActivated, false);
 
 			cv.popMatrix();
 
@@ -1971,7 +2066,7 @@ namespace Robot
 			cv.translate(-shieldCurrentState.transX, shieldCurrentState.transY, shieldCurrentState.transZ);
 			cv.scale(shieldCurrentState.scaleX, shieldCurrentState.scaleY, shieldCurrentState.scaleZ);
 
-			SoonChee::shield(shieldActivated, true);
+			WeaponProjectionBackground::shield(shieldActivated, true);
 
 			cv.popMatrix();
 		}
@@ -2072,6 +2167,32 @@ namespace Robot
 			rightLeg.solveIK(leftLegCurrentTarget);
 		}
 		rightLeg.draw();
+
+		// gun bullets, not concerned with other transforms
+		if (currentGun == LEFT_GUN && gunShoot)
+		{
+			// when left gun shooting, sneakily reset right gun bullet's transformation
+			rightGunBullet.transZ = 0;
+			cv
+				.pushMatrix()
+				.translate(0, 0, leftGunBullet.transZ += 0.55)
+				.sphere({ -5, 3.5, 9, {255, 255, 255} }, 0.5)
+				;
+
+			cv.popMatrix();
+		}
+		if (currentGun == RIGHT_GUN && gunShoot)
+		{
+			// when left gun shooting, sneakily reset right gun bullet's transformation
+			leftGunBullet.transZ = 0;
+			cv
+				.pushMatrix()
+				.translate(0, 0, rightGunBullet.transZ += 0.55)
+				.sphere({ 5, 3.5, 9, {255, 255, 255} }, 0.5)
+				;
+
+			cv.popMatrix();
+		}
 	}
 
 	void handleKeyDownEvent(WPARAM key)
@@ -2345,6 +2466,12 @@ namespace Robot
 				break;
 			animating = GUN_EQUIP_UNEQUIP;
 			setGunEquip = !setGunEquip;
+			break;
+		case '7':
+			if (animating != ANIMATING_NONE && animating != ATTACK_WITH_GUN)
+				break;
+			animating = ATTACK_WITH_GUN;
+			gunShoot = !gunShoot;
 			break;
 		case 'C':
 			if (animating != ANIMATING_NONE) // only ntg animating only can attack with sword
