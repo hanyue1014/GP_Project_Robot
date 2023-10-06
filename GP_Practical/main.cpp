@@ -140,8 +140,8 @@ enum SelectedLightColor { LIGHT_RED, LIGHT_GREEN, LIGHT_BLUE };
 
 // environment ambient light (some what cold color)
 float amb[] = { 0.1, 0.1, 0.3 };
-float intensity[] = { 1.0,1.0,1.0 };   //Green color diffuse light
-float pos[] = { 0.0,0.0,1.0 };   //dif light pos (1,0,0) right sphere
+float intensity[] = { 1.0,1.0,1.0 };   // diffuse light
+float pos[] = { 0.0,0.0,1.0 };
 bool isLightOn = false;
 bool editingLight = false;
 SelectedLightColor editingColor = LIGHT_RED;
