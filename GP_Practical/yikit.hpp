@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Windows.h>
 #include <gl/GL.h>
 #include <gl/GLU.h>
@@ -10,7 +12,7 @@ namespace YiKit
 	
 	void cuboid()
 	{
-		glColor3f(1.0, 1.0, 1.0);
+		glColor3f(0.5, 0.5, 0.5);
 		glBegin(GL_QUADS);
 		//bottom
 		glVertex3f(-0.3, 0.0, -1.0);
@@ -202,15 +204,16 @@ namespace YiKit
 	{
 		//glRotatef(0.01, 1.0, 1.0, 1.0);
 		glPushMatrix();
-		glScalef(0.5, 0.5, 0.5);
+		glScalef(1, 1, 0.25);
+		glTranslatef(-0.35, 0.3, 0.5);
 		glPushMatrix();
-		glRotatef(15, 1.0, 0.0, 1.0);
+		//glRotatef(15, 1.0, 0.0, 1.0);
 		//glRotatef(-90, 0.0, 1.0, 0.0);
 		cuboid();
 		handle();
 		presser();
 		glPushMatrix();
-		glTranslatef(0.15, 0.1, 0.0);
+		//glTranslatef(0.15, 0.1, 0.0);
 		presser3();
 		glPopMatrix();
 		//glLoadIdentity();
